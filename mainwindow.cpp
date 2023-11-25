@@ -18,6 +18,10 @@ MainWindow::~MainWindow()
     for(p = stmt.begin(); p != stmt.end(); p++) {
         delete (*p);
     }
+    vector<VarExp*>::iterator p2;
+    for(p2 = var.begin(); p2 != var.end(); p2++) {
+        delete (*p2);
+    }
 }
 
 void MainWindow::clearAll()
@@ -57,20 +61,7 @@ void MainWindow::readCodeLine(QString input)
         dealWithCmd(input);
         return;
     }
-    string str = input.toStdString();
-    Statement* s = new Statement(str);
-    vector<Statement*>::iterator p;
-    for(p = stmt.begin(); p != stmt.end(); p++) {
-        if(s->lineNum == (*p)->lineNum) {
-            delete (*p);
-            *p = s;
-            break;
-        }
-    }
-    if (p == stmt.end()) {
-        stmt.push_back(s);
-        sort(stmt.begin(), stmt.end(), cmp);
-    }
+    dealWithStmt(first.toInt(), input.section(' ', 1));
 }
 
 bool MainWindow::stringIsNum(QString s)
@@ -119,12 +110,54 @@ void MainWindow::dealWithCmd(QString s)
     }
 }
 
+void MainWindow::dealWithStmt(int num, QString ss)
+{
+    QString first = ss.section(' ', 0, 0);
+    QString second = ss.section(' ', 1, 1);
+    if (first == "REM") {
+        RemStmt* s = new RemStmt(num, ss.section(' ', 1));
+        pushStmt(s);
+    } else if (first == "LET") {
+
+    } else if (first == "PRINT") {
+
+    } else if (first == "INPUT") {
+
+    } else if (first == "GOTO" && stringIsNum(second) && ss.section(' ', 2) == "") {
+        GotoStmt* s = new GotoStmt(num, second.toInt());
+        pushStmt(s);
+    } else if (first == "IF") {
+
+    } else if (first == "END" && ss.section(' ', 1) == "") {
+        EndStmt* s = new EndStmt(num);
+        pushStmt(s);
+    } else {
+        throw QString("非法输入！");
+    }
+}
+
+void MainWindow::pushStmt(Statement* s)
+{
+    vector<Statement*>::iterator p;
+    for(p = stmt.begin(); p != stmt.end(); p++) {
+        if(s->lineNum == (*p)->lineNum) {
+            delete (*p);
+            *p = s;
+            break;
+        }
+    }
+    if (p == stmt.end()) {
+        stmt.push_back(s);
+        sort(stmt.begin(), stmt.end(), cmp);
+    }
+}
+
 void MainWindow::changeCode()
 {
     vector<Statement*>::iterator p;
     ui->CodeDisplay->clear();
     for(p = stmt.begin(); p != stmt.end(); p++) {
-        ui->CodeDisplay->append(QString::fromStdString((*p)->s));
+        ui->CodeDisplay->append(((*p)->showStr()));
     }
 }
 

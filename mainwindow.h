@@ -22,6 +22,7 @@ class MainWindow : public QMainWindow
 
 public:
     vector<Statement*> stmt;
+    vector<VarExp*> var;
     MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
@@ -37,6 +38,8 @@ private slots:
     bool stringIsNum(QString s);
     void deleteCode(int num);
     void dealWithCmd(QString s);
+    void dealWithStmt(int num, QString s);
+    void pushStmt(Statement* s);
 
 private:
     Ui::MainWindow* ui;

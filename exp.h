@@ -19,7 +19,7 @@ public:
 class VarExp : public Exp
 {
 public:
-    VarExp(QString n, int v): Exp(n, v) {}
+    VarExp(QString n, int v = 0): Exp(n, v) {}
 };
 
 class ConstExp : public Exp

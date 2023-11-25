@@ -40,6 +40,7 @@ private slots:
     void dealWithCmd(QString s);
     void dealWithStmt(int num, QString s);
     void pushStmt(Statement* s);
+    void checkVaildName(QString s);
 
 private:
     Ui::MainWindow* ui;

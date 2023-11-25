@@ -33,16 +33,40 @@ QString RemStmt::showStr()
     return QString::number(lineNum) + ' ' + "REM" + ' ' + (child[0])->name;
 }
 
-EndStmt::~EndStmt()
+LetStmt::~LetStmt()
 {
     for (Exp* ch : child) {
         delete ch;
     }
 }
 
-QString EndStmt::showStr()
+LetStmt::LetStmt(int num, QString ss): Statement(num)
 {
-    return QString::number(lineNum) + ' ' + "END";
+    StringExp* exp = new StringExp(ss);
+    child.push_back(exp);
+}
+
+QString LetStmt::showStr()
+{
+    return QString::number(lineNum) + ' ' + "REM" + ' ' + (child[0])->name;
+}
+
+InputStmt::~InputStmt()
+{
+    for (Exp* ch : child) {
+        delete ch;
+    }
+}
+
+InputStmt::InputStmt(int num, QString ss): Statement(num)
+{
+    VarExp* exp = new VarExp(ss);
+    child.push_back(exp);
+}
+
+QString InputStmt::showStr()
+{
+    return QString::number(lineNum) + ' ' + "INPUT" + ' ' + (child[0])->name;
 }
 
 GotoStmt::~GotoStmt()
@@ -62,4 +86,36 @@ QString GotoStmt::showStr()
 {
     return QString::number(lineNum) + ' ' + "GOTO" + ' ' + QString::number((child[0])->val);
 }
+
+IfStmt::~IfStmt()
+{
+    for (Exp* ch : child) {
+        delete ch;
+    }
+}
+
+IfStmt::IfStmt(int num, int val): Statement(num)
+{
+    ConstExp* exp = new ConstExp(val);
+    child.push_back(exp);
+}
+
+QString IfStmt::showStr()
+{
+    return QString::number(lineNum) + ' ' + "GOTO" + ' ' + QString::number((child[0])->val);
+}
+
+EndStmt::~EndStmt()
+{
+    for (Exp* ch : child) {
+        delete ch;
+    }
+}
+
+QString EndStmt::showStr()
+{
+    return QString::number(lineNum) + ' ' + "END";
+}
+
+
 

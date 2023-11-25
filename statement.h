@@ -25,20 +25,26 @@ public:
     virtual ~RemStmt();
 };
 
-//class LetStmt: public Statement
-//{
-//    LetStmt(int num, QString ss);
-//};
+class LetStmt: public Statement
+{
+public:
+    LetStmt(int num, QString ss);
+    QString showStr() override;
+    virtual ~LetStmt();
+};
 
 //class PrintStmt: public Statement
 //{
 
 //};
 
-//class InputStmt: public Statement
-//{
-
-//};
+class InputStmt: public Statement
+{
+public:
+    InputStmt(int num, QString ss);
+    QString showStr() override;
+    virtual ~InputStmt();
+};
 
 class GotoStmt: public Statement
 {
@@ -48,10 +54,14 @@ public:
     virtual ~GotoStmt();
 };
 
-//class IfStmt: public Statement
-//{
+class IfStmt: public Statement
+{
+public:
+    IfStmt(int num, int val);
+    QString showStr() override;
+    virtual ~IfStmt();
 
-//};
+};
 
 class EndStmt: public Statement
 {

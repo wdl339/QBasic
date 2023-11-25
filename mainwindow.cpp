@@ -121,8 +121,10 @@ void MainWindow::dealWithStmt(int num, QString ss)
 
     } else if (first == "PRINT") {
 
-    } else if (first == "INPUT") {
-
+    } else if (first == "INPUT" && second != "" && ss.section(' ', 2) == "") {
+        checkVaildName(second);
+        InputStmt* s = new InputStmt(num, second);
+        pushStmt(s);
     } else if (first == "GOTO" && stringIsNum(second) && ss.section(' ', 2) == "") {
         GotoStmt* s = new GotoStmt(num, second.toInt());
         pushStmt(s);
@@ -134,6 +136,23 @@ void MainWindow::dealWithStmt(int num, QString ss)
     } else {
         throw QString("非法输入！");
     }
+}
+
+void MainWindow::checkVaildName(QString s)
+{
+    QRegExp regExp("^[a-zA-Z_][a-zA-Z0-9_]*$");
+    if (regExp.exactMatch(s)) {
+        QString sMaintain[13] = {"LET", "REM", "PRINT", "INPUT", "GOTO", "IF", "END",
+                                 "RUN", "LOAD", "LIST", "CLEAR", "HELP", "QUIT"
+                                };
+        for(int i = 0; i < 13; i++) {
+            if(s == sMaintain[i]) {
+                throw QString("非法变量名！");
+            }
+        }
+        return;
+    }
+    throw QString("非法变量名！");
 }
 
 void MainWindow::pushStmt(Statement* s)

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EXP_H
 #define EXP_H
 
@@ -8,6 +9,7 @@ using namespace std;
 
 class Exp
 {
+
 public:
     QString name;
     int val;

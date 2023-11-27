@@ -10,9 +10,9 @@ Statement::~Statement()
 
 }
 
-QString Statement::showStr()
+void Statement::run()
 {
-    return " ";
+
 }
 
 RemStmt::~RemStmt()
@@ -28,11 +28,6 @@ RemStmt::RemStmt(int num, QString ss): Statement(num)
     child.push_back(exp);
 }
 
-QString RemStmt::showStr()
-{
-    return QString::number(lineNum) + ' ' + "REM" + ' ' + (child[0])->name;
-}
-
 LetStmt::~LetStmt()
 {
     for (Exp* ch : child) {
@@ -46,9 +41,17 @@ LetStmt::LetStmt(int num, QString ss): Statement(num)
     child.push_back(exp);
 }
 
-QString LetStmt::showStr()
+PrintStmt::~PrintStmt()
 {
-    return QString::number(lineNum) + ' ' + "REM" + ' ' + (child[0])->name;
+    for (Exp* ch : child) {
+        delete ch;
+    }
+}
+
+PrintStmt::PrintStmt(int num, QString ss): Statement(num)
+{
+    Calc calc(ss);
+    child.push_back(calc.makeSyntaxTree());
 }
 
 InputStmt::~InputStmt()
@@ -64,11 +67,6 @@ InputStmt::InputStmt(int num, QString ss): Statement(num)
     child.push_back(exp);
 }
 
-QString InputStmt::showStr()
-{
-    return QString::number(lineNum) + ' ' + "INPUT" + ' ' + (child[0])->name;
-}
-
 GotoStmt::~GotoStmt()
 {
     for (Exp* ch : child) {
@@ -80,11 +78,6 @@ GotoStmt::GotoStmt(int num, int val): Statement(num)
 {
     ConstExp* exp = new ConstExp(val);
     child.push_back(exp);
-}
-
-QString GotoStmt::showStr()
-{
-    return QString::number(lineNum) + ' ' + "GOTO" + ' ' + QString::number((child[0])->val);
 }
 
 IfStmt::~IfStmt()
@@ -100,11 +93,6 @@ IfStmt::IfStmt(int num, int val): Statement(num)
     child.push_back(exp);
 }
 
-QString IfStmt::showStr()
-{
-    return QString::number(lineNum) + ' ' + "GOTO" + ' ' + QString::number((child[0])->val);
-}
-
 EndStmt::~EndStmt()
 {
     for (Exp* ch : child) {
@@ -112,10 +100,6 @@ EndStmt::~EndStmt()
     }
 }
 
-QString EndStmt::showStr()
-{
-    return QString::number(lineNum) + ' ' + "END";
-}
 
 
 

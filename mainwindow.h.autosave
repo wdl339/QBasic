@@ -39,8 +39,7 @@ public:
     static bool cmp(StmtStr a, StmtStr b);
     void changeCodeDisplay();
 
-    void readCodeLine(QString input);
-    void dealWithStmt(int num, QString s);
+    void runCodeLine(int num, QString s);
     void checkVaildName(QString s);
 
 private slots:

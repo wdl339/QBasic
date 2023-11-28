@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <statement.h>
 #include <vector>
+#include <queue>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTextStream>
@@ -39,9 +40,8 @@ public:
     static bool cmp(StmtStr a, StmtStr b);
     void changeCodeDisplay();
 
-    void readCodeLine(QString input);
-    void dealWithStmt(int num, QString s);
-    void checkVaildName(QString s);
+    void runCodeLine(int num, QString s);
+    void showSyntaxTree(Statement* s);
 
 private slots:
     //    void on_cmdLineEdit_editingFinished();

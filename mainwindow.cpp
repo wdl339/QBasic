@@ -8,8 +8,8 @@ MainWindow::MainWindow(QWidget* parent)
     ui->setupUi(this);
     connect(ui->btnClearCode, SIGNAL(clicked()), this, SLOT(clearAll()));
     connect(ui->btnLoadCode, SIGNAL(clicked()), this, SLOT(loadFile()));
+    connect(ui->btnRunCode, SIGNAL(clicked()), this, SLOT(runCode()));
     connect(ui->cmdLineEdit, SIGNAL(returnPressed()), this, SLOT(codeLineEdit_return()));
-    connect(ui->btnRunCode, SIGNAL(returnPressed()), this, SLOT(runCode()));
 }
 
 MainWindow::~MainWindow()
@@ -139,10 +139,18 @@ void MainWindow::changeCodeDisplay()
 
 void MainWindow::runCode()
 {
-    vector<Statement*> stmtCode;
-    vector<StmtStr>::iterator p;
-    for(p = stmt.begin(); p != stmt.end(); p++) {
-        runCodeLine(p->lineNum, (p->s).section(' ', 1));
+    try {
+        ui->textBrowser->clear();
+        ui->treeDisplay->clear();
+        vector<Statement*> stmtCode;
+        vector<StmtStr>::iterator p;
+        for(p = stmt.begin(); p != stmt.end(); p++) {
+            QString input = p->s;
+            input = input.replace("=", " = ").replace(">", " > ").replace("<", " < ");
+            runCodeLine(p->lineNum, (input.section(' ', 1)).simplified());
+        }
+    } catch (QString error) {
+        QMessageBox::critical(this, "Error", error);
     }
 }
 
@@ -153,43 +161,64 @@ void MainWindow::runCodeLine(int num, QString ss)
     if (first == "REM") {
         RemStmt* s = new RemStmt(num, ss.section(' ', 1));
         s->run();
-    } else if (first == "LET") {
-
+        showSyntaxTree(s);
+    } else if (first == "LET" && ss.section(' ', 2, 2) == "=") {
+        LetStmt* s = new LetStmt(num, ss.section(' ', 1, 1), ss.section(' ', 3));
+        s->run();
+        showSyntaxTree(s);
     } else if (first == "PRINT" && second != "") {
         PrintStmt* s = new PrintStmt(num, ss.section(' ', 1));
         s->run();
+        showSyntaxTree(s);
     } else if (first == "INPUT" && second != "" && ss.section(' ', 2) == "") {
-        checkVaildName(second);
         InputStmt* s = new InputStmt(num, second);
         s->run();
+        showSyntaxTree(s);
     } else if (first == "GOTO" && stringIsPosNum(second) && ss.section(' ', 2) == "") {
         GotoStmt* s = new GotoStmt(num, second.toInt());
         s->run();
+        showSyntaxTree(s);
     } else if (first == "IF") {
-
+        IfStmt* s = new IfStmt(num, ss.section(' ', 1));
+        s->run();
+        showSyntaxTree(s);
     } else if (first == "END" && ss.section(' ', 1) == "") {
         EndStmt* s = new EndStmt(num);
         s->run();
+        showSyntaxTree(s);
     } else {
         throw QString("非法输入！");
     }
 }
 
-void MainWindow::checkVaildName(QString s)
+void MainWindow::showSyntaxTree(Statement* s)
 {
-    QRegExp regExp("^[a-zA-Z_][a-zA-Z0-9_]*$");
-    if (regExp.exactMatch(s)) {
-        QString sMaintain[13] = {"LET", "REM", "PRINT", "INPUT", "GOTO", "IF", "END",
-                                 "RUN", "LOAD", "LIST", "CLEAR", "HELP", "QUIT"
-                                };
-        for(int i = 0; i < 13; i++) {
-            if(s == sMaintain[i]) {
-                throw QString("非法变量名！");
-            }
+    QString res = s->treeNode;
+    queue<Exp*> que;
+    Exp* tmp;
+    int numOfT = 1;
+    if(!(s->child).empty()) {
+        for (Exp* ch : s->child) {
+            que.push(ch);
         }
-        return;
     }
-    throw QString("非法变量名！");
+
+    while(!que.empty()) {
+        int size = que.size();
+        for(int j = 0; j < size; j++) {
+            tmp = que.front();
+            que.pop();
+            for(int i = 0; i < numOfT; i++) {
+                res += "    ";
+            }
+            res += tmp->name;
+            res += '\n';
+            if(!(tmp->child).empty()) que.push(tmp->child[0]);
+            if((tmp->child).size() == 2) que.push(tmp->child[1]);
+        }
+        numOfT += 1;
+    }
+    ui->treeDisplay->append(res);
 }
 
 void MainWindow::loadFile()

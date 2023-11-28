@@ -26,6 +26,7 @@ RemStmt::RemStmt(int num, QString ss): Statement(num)
 {
     StringExp* exp = new StringExp(ss);
     child.push_back(exp);
+    treeNode = QString::number(num) + " " + "REM\n";
 }
 
 LetStmt::~LetStmt()
@@ -35,10 +36,13 @@ LetStmt::~LetStmt()
     }
 }
 
-LetStmt::LetStmt(int num, QString ss): Statement(num)
+LetStmt::LetStmt(int num, QString var, QString exp): Statement(num)
 {
-    StringExp* exp = new StringExp(ss);
-    child.push_back(exp);
+    VarExp* varExp = new VarExp(var);
+    child.push_back(varExp);
+    Calc calc(exp);
+    child.push_back(calc.makeSyntaxTree());
+    treeNode = QString::number(num) + " " + "LET =\n";
 }
 
 PrintStmt::~PrintStmt()
@@ -52,6 +56,7 @@ PrintStmt::PrintStmt(int num, QString ss): Statement(num)
 {
     Calc calc(ss);
     child.push_back(calc.makeSyntaxTree());
+    treeNode = QString::number(num) + " " + "PRINT\n";
 }
 
 InputStmt::~InputStmt()
@@ -65,6 +70,7 @@ InputStmt::InputStmt(int num, QString ss): Statement(num)
 {
     VarExp* exp = new VarExp(ss);
     child.push_back(exp);
+    treeNode = QString::number(num) + " " + "INPUT\n";
 }
 
 GotoStmt::~GotoStmt()
@@ -78,6 +84,7 @@ GotoStmt::GotoStmt(int num, int val): Statement(num)
 {
     ConstExp* exp = new ConstExp(val);
     child.push_back(exp);
+    treeNode = QString::number(num) + " " + "GOTO\n";
 }
 
 IfStmt::~IfStmt()
@@ -87,10 +94,38 @@ IfStmt::~IfStmt()
     }
 }
 
-IfStmt::IfStmt(int num, int val): Statement(num)
+IfStmt::IfStmt(int num, QString ss): Statement(num)
 {
-    ConstExp* exp = new ConstExp(val);
-    child.push_back(exp);
+    int thenIndex = ss.indexOf("THEN");
+    if (thenIndex != -1) {
+        QString expBeforeThen = ss.left(thenIndex).trimmed();
+        QString expAfterThen = ss.mid(thenIndex + 4).trimmed();
+        QString statement = "IF (a + b) > (c - d) THEN 10";
+
+        QRegularExpression regex("(.*)\\s*([<>=])\\s*(.*)");
+        QRegularExpressionMatch match = regex.match(expBeforeThen);
+
+        if (match.hasMatch()) {
+            QString exp1 = match.captured(1).trimmed();
+            QString op = match.captured(2).trimmed();
+            QString exp2 = match.captured(3).trimmed();
+
+            Calc calc(exp1);
+            child.push_back(calc.makeSyntaxTree());
+            StringExp* iden = new StringExp(op);
+            child.push_back(iden);
+            Calc calc2(exp2);
+            child.push_back(calc2.makeSyntaxTree());
+
+        } else {
+            throw QString("非法输入");
+        }
+        ConstExp* n = new ConstExp(expAfterThen.toInt());
+        child.push_back(n);
+    } else {
+        throw QString("非法输入");
+    }
+    treeNode = QString::number(num) + " " + "IF THEN\n";
 }
 
 EndStmt::~EndStmt()
@@ -100,6 +135,10 @@ EndStmt::~EndStmt()
     }
 }
 
+EndStmt::EndStmt(int num): Statement(num)
+{
+    treeNode = QString::number(num) + " " + "END\n";
+}
 
 
 

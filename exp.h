@@ -21,13 +21,16 @@ public:
 class VarExp : public Exp
 {
 public:
-    VarExp(QString n, int v = 0): Exp(n, v) {}
+    VarExp(QString n, int v = 0);
+    void checkVaildName(QString s);
+    ~VarExp();
 };
 
 class ConstExp : public Exp
 {
 public:
-    ConstExp(int v, QString n = ""): Exp(n, v) {}
+    ConstExp(int v);
+    ~ConstExp();
 };
 
 class StringExp : public Exp
@@ -40,13 +43,15 @@ public:
 class IdentifierExp : public Exp
 {
 public:
-    IdentifierExp(QString n, int v, Exp* p1 = nullptr, Exp* p2 = nullptr):
+    IdentifierExp(QString n, int v = 0, Exp* p1 = nullptr, Exp* p2 = nullptr):
         Exp(n, v)
     {
-        child[0] = p1;
-        child[1] = p2;
+        child.push_back(p1);
+        child.push_back(p2);
     }
+    ~IdentifierExp();
 
 };
 
 #endif // EXP_H
+//13 PRINT -1 + 4 MOD 2 + 4 * 3 / 5 ** 8

@@ -6,6 +6,7 @@
 #include <vector>
 #include <exp.h>
 #include <calc.h>
+#include <QRegularExpression>
 
 using namespace std;
 
@@ -14,6 +15,7 @@ class Statement
 public:
     Statement(int num);
     int lineNum;
+    QString treeNode;
     vector<Exp*> child;
     void run();
     virtual ~Statement();
@@ -29,7 +31,7 @@ public:
 class LetStmt: public Statement
 {
 public:
-    LetStmt(int num, QString ss);
+    LetStmt(int num, QString var, QString exp);
     virtual ~LetStmt();
 };
 
@@ -57,7 +59,7 @@ public:
 class IfStmt: public Statement
 {
 public:
-    IfStmt(int num, int val);
+    IfStmt(int num, QString ss);
     virtual ~IfStmt();
 
 };

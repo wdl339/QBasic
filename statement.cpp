@@ -10,30 +10,11 @@ Statement::~Statement()
 
 }
 
-void Statement::run()
-{
-
-}
-
-RemStmt::~RemStmt()
-{
-    for (Exp* ch : child) {
-        delete ch;
-    }
-}
-
 RemStmt::RemStmt(int num, QString ss): Statement(num)
 {
     StringExp* exp = new StringExp(ss);
     child.push_back(exp);
-    treeNode = QString::number(num) + " " + "REM\n";
-}
-
-LetStmt::~LetStmt()
-{
-    for (Exp* ch : child) {
-        delete ch;
-    }
+    type = REM;
 }
 
 LetStmt::LetStmt(int num, QString var, QString exp): Statement(num)
@@ -42,56 +23,28 @@ LetStmt::LetStmt(int num, QString var, QString exp): Statement(num)
     child.push_back(varExp);
     Calc calc(exp);
     child.push_back(calc.makeSyntaxTree());
-    treeNode = QString::number(num) + " " + "LET =\n";
-}
-
-PrintStmt::~PrintStmt()
-{
-    for (Exp* ch : child) {
-        delete ch;
-    }
+    type = LET;
 }
 
 PrintStmt::PrintStmt(int num, QString ss): Statement(num)
 {
     Calc calc(ss);
     child.push_back(calc.makeSyntaxTree());
-    treeNode = QString::number(num) + " " + "PRINT\n";
-}
-
-InputStmt::~InputStmt()
-{
-    for (Exp* ch : child) {
-        delete ch;
-    }
+    type = PRINT;
 }
 
 InputStmt::InputStmt(int num, QString ss): Statement(num)
 {
     VarExp* exp = new VarExp(ss);
     child.push_back(exp);
-    treeNode = QString::number(num) + " " + "INPUT\n";
-}
-
-GotoStmt::~GotoStmt()
-{
-    for (Exp* ch : child) {
-        delete ch;
-    }
+    type = INPUT;
 }
 
 GotoStmt::GotoStmt(int num, int val): Statement(num)
 {
     ConstExp* exp = new ConstExp(val);
     child.push_back(exp);
-    treeNode = QString::number(num) + " " + "GOTO\n";
-}
-
-IfStmt::~IfStmt()
-{
-    for (Exp* ch : child) {
-        delete ch;
-    }
+    type = GOTO;
 }
 
 IfStmt::IfStmt(int num, QString ss): Statement(num)
@@ -100,7 +53,6 @@ IfStmt::IfStmt(int num, QString ss): Statement(num)
     if (thenIndex != -1) {
         QString expBeforeThen = ss.left(thenIndex).trimmed();
         QString expAfterThen = ss.mid(thenIndex + 4).trimmed();
-        QString statement = "IF (a + b) > (c - d) THEN 10";
 
         QRegularExpression regex("(.*)\\s*([<>=])\\s*(.*)");
         QRegularExpressionMatch match = regex.match(expBeforeThen);
@@ -112,8 +64,8 @@ IfStmt::IfStmt(int num, QString ss): Statement(num)
 
             Calc calc(exp1);
             child.push_back(calc.makeSyntaxTree());
-            StringExp* iden = new StringExp(op);
-            child.push_back(iden);
+            StringExp* com = new StringExp(op);
+            child.push_back(com);
             Calc calc2(exp2);
             child.push_back(calc2.makeSyntaxTree());
 
@@ -125,7 +77,90 @@ IfStmt::IfStmt(int num, QString ss): Statement(num)
     } else {
         throw QString("非法输入");
     }
-    treeNode = QString::number(num) + " " + "IF THEN\n";
+    type = IF;
+}
+
+EndStmt::EndStmt(int num): Statement(num)
+{
+    type = END;
+}
+
+void LetStmt::run(map<QString, int>& varTable)
+{
+    int res = child[1]->eval(varTable);
+    varTable[child[0]->name] = res;
+    child[0]->val = res;
+}
+
+void PrintStmt::run(map<QString, int>& varTable)
+{
+    child[0]->eval(varTable);
+}
+
+void IfStmt::run(map<QString, int>& varTable)
+{
+    child[0]->eval(varTable);
+    child[2]->eval(varTable);
+    bool flag = false;
+    if(child[1]->name == "=") {
+        if(child[0]->val == child[2]->val) {
+            flag = true;
+        }
+    } else if (child[1]->name == ">") {
+        if(child[0]->val > child[2]->val) {
+            flag = true;
+        }
+    } else if (child[1]->name == "<") {
+        if(child[0]->val < child[2]->val) {
+            flag = true;
+        }
+    }
+    if(flag) {
+        child[1]->val = child[3]->val;
+    }
+}
+
+RemStmt::~RemStmt()
+{
+    for (Exp* ch : child) {
+        delete ch;
+    }
+}
+
+LetStmt::~LetStmt()
+{
+    for (Exp* ch : child) {
+        delete ch;
+    }
+}
+
+PrintStmt::~PrintStmt()
+{
+    for (Exp* ch : child) {
+        delete ch;
+    }
+}
+
+
+InputStmt::~InputStmt()
+{
+    for (Exp* ch : child) {
+        delete ch;
+    }
+}
+
+GotoStmt::~GotoStmt()
+{
+    for (Exp* ch : child) {
+        delete ch;
+    }
+}
+
+IfStmt::~IfStmt()
+{
+    for (Exp* ch : child) {
+        delete ch;
+    }
 }
 
 EndStmt::~EndStmt()
@@ -134,11 +169,3 @@ EndStmt::~EndStmt()
         delete ch;
     }
 }
-
-EndStmt::EndStmt(int num): Statement(num)
-{
-    treeNode = QString::number(num) + " " + "END\n";
-}
-
-
-

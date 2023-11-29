@@ -15,10 +15,6 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow()
 {
     delete ui;
-    vector<VarExp*>::iterator p;
-    for(p = var.begin(); p != var.end(); p++) {
-        delete (*p);
-    }
 }
 
 void MainWindow::clearAll()
@@ -44,7 +40,7 @@ void MainWindow::codeLineEdit_return()
 void MainWindow::readStrLine(QString input)
 {
     if(stringIsPosNum(input)) {
-        deleteStrLine(input.toInt());
+        stmt.erase(input.toInt());
         return;
     }
     QString first = input.section(' ', 0, 0);
@@ -56,10 +52,7 @@ void MainWindow::readStrLine(QString input)
     if(num >= 1000000) {
         throw QString("行号错误");
     }
-    StmtStr s;
-    s.s = input;
-    s.lineNum = num;
-    pushStmt(s);
+    stmt[num] = input;
 }
 
 bool MainWindow::stringIsPosNum(QString s)
@@ -69,17 +62,6 @@ bool MainWindow::stringIsPosNum(QString s)
         return true;
     }
     return false;
-}
-
-void MainWindow::deleteStrLine(int num)
-{
-    vector<StmtStr>::iterator p;
-    for(p = stmt.begin(); p != stmt.end(); p++) {
-        if(p->lineNum == num) {
-            stmt.erase(p);
-            break;
-        }
-    }
 }
 
 void MainWindow::dealWithCmd(QString s)
@@ -107,33 +89,11 @@ void MainWindow::dealWithCmd(QString s)
     }
 }
 
-
-void MainWindow::pushStmt(StmtStr s)
-{
-    vector<StmtStr>::iterator p;
-    for(p = stmt.begin(); p != stmt.end(); p++) {
-        if(s.lineNum == p->lineNum) {
-            *p = s;
-            break;
-        }
-    }
-    if (p == stmt.end()) {
-        stmt.push_back(s);
-        sort(stmt.begin(), stmt.end(), cmp);
-    }
-}
-
-bool MainWindow::cmp(StmtStr a, StmtStr b)
-{
-    return a.lineNum < b.lineNum;
-}
-
 void MainWindow::changeCodeDisplay()
 {
-    vector<StmtStr>::iterator p;
     ui->CodeDisplay->clear();
-    for(p = stmt.begin(); p != stmt.end(); p++) {
-        ui->CodeDisplay->append((*p).s);
+    for (const auto& pair : stmt) {
+        ui->CodeDisplay->append(pair.second);
     }
 }
 
@@ -142,58 +102,60 @@ void MainWindow::runCode()
     try {
         ui->textBrowser->clear();
         ui->treeDisplay->clear();
-        vector<Statement*> stmtCode;
-        vector<StmtStr>::iterator p;
-        for(p = stmt.begin(); p != stmt.end(); p++) {
-            QString input = p->s;
+        map<int, Statement*> code;
+        for (const auto& pair : stmt) {
+            QString input = pair.second;
             input = input.replace("=", " = ").replace(">", " > ").replace("<", " < ");
-            runCodeLine(p->lineNum, (input.section(' ', 1)).simplified());
+            buildSyntaxTree(pair.first, (input.section(' ', 1)).simplified(), code);
+        }
+        if(!code.empty()) {
+            int curLineNum = 0;
+            int lastLineNum = (*code.rbegin()).first;
+            int nextLineNum = (*code.begin()).first;
+            do {
+                curLineNum = nextLineNum;
+                Statement* s = code[curLineNum];
+                if(curLineNum != lastLineNum) {
+                    auto it = code.upper_bound(curLineNum);
+                    nextLineNum = it->first;
+                }
+                runCodeLine(s, nextLineNum);
+            } while((curLineNum != lastLineNum || nextLineNum != lastLineNum) && nextLineNum != -1);
         }
     } catch (QString error) {
         QMessageBox::critical(this, "Error", error);
     }
 }
 
-void MainWindow::runCodeLine(int num, QString ss)
+void MainWindow::buildSyntaxTree(int num, QString ss, map<int, Statement*>& code)
 {
     QString first = ss.section(' ', 0, 0);
     QString second = ss.section(' ', 1, 1);
+    Statement* s;
     if (first == "REM") {
-        RemStmt* s = new RemStmt(num, ss.section(' ', 1));
-        s->run();
-        showSyntaxTree(s);
+        s = new RemStmt(num, ss.section(' ', 1));
     } else if (first == "LET" && ss.section(' ', 2, 2) == "=") {
-        LetStmt* s = new LetStmt(num, ss.section(' ', 1, 1), ss.section(' ', 3));
-        s->run();
-        showSyntaxTree(s);
+        s = new LetStmt(num, ss.section(' ', 1, 1), ss.section(' ', 3));
     } else if (first == "PRINT" && second != "") {
-        PrintStmt* s = new PrintStmt(num, ss.section(' ', 1));
-        s->run();
-        showSyntaxTree(s);
+        s = new PrintStmt(num, ss.section(' ', 1));
     } else if (first == "INPUT" && second != "" && ss.section(' ', 2) == "") {
-        InputStmt* s = new InputStmt(num, second);
-        s->run();
-        showSyntaxTree(s);
+        s = new InputStmt(num, second);
     } else if (first == "GOTO" && stringIsPosNum(second) && ss.section(' ', 2) == "") {
-        GotoStmt* s = new GotoStmt(num, second.toInt());
-        s->run();
-        showSyntaxTree(s);
+        s = new GotoStmt(num, second.toInt());
     } else if (first == "IF") {
-        IfStmt* s = new IfStmt(num, ss.section(' ', 1));
-        s->run();
-        showSyntaxTree(s);
+        s = new IfStmt(num, ss.section(' ', 1));
     } else if (first == "END" && ss.section(' ', 1) == "") {
-        EndStmt* s = new EndStmt(num);
-        s->run();
-        showSyntaxTree(s);
+        s = new EndStmt(num);
     } else {
         throw QString("非法输入！");
     }
+    code[num] = s;
+    showSyntaxTree(s);
 }
 
 void MainWindow::showSyntaxTree(Statement* s)
 {
-    QString res = s->treeNode;
+    QString res = getTreeNode(s);
     queue<Exp*> que;
     Exp* tmp;
     int numOfT = 1;
@@ -206,19 +168,68 @@ void MainWindow::showSyntaxTree(Statement* s)
     while(!que.empty()) {
         int size = que.size();
         for(int j = 0; j < size; j++) {
+            res += '\n';
             tmp = que.front();
             que.pop();
             for(int i = 0; i < numOfT; i++) {
                 res += "    ";
             }
             res += tmp->name;
-            res += '\n';
             if(!(tmp->child).empty()) que.push(tmp->child[0]);
             if((tmp->child).size() == 2) que.push(tmp->child[1]);
         }
         numOfT += 1;
     }
     ui->treeDisplay->append(res);
+}
+
+QString MainWindow::getTreeNode(Statement* s)
+{
+    QString treeNode = "";
+    QString num = QString::number(s->lineNum);
+    switch(s->type) {
+        case REM:
+            treeNode = num + " " + "REM";
+            break;
+        case LET:
+            treeNode = num + " " + "LET =";
+            break;
+        case PRINT:
+            treeNode = num + " " + "PRINT";
+            break;
+        case INPUT:
+            treeNode = num + " " + "INPUT";
+            break;
+        case GOTO:
+            treeNode = num + " " + "GOTO";
+            break;
+        case IF:
+            treeNode = num + " " + "IF THEN";
+            break;
+        case END:
+            treeNode = num + " " + "END";
+            break;
+    }
+    return treeNode;
+}
+
+void MainWindow::runCodeLine(Statement* s, int& nextLineNum)
+{
+    s->run(varTable);
+    stmtType type = s->type;
+    if(type == INPUT) {
+        //待完成
+    } else if (type == PRINT) {
+        ui->textBrowser->append(QString::number(s->child[0]->val));
+    } else if (type == GOTO) {
+        nextLineNum = s->child[0]->val;
+    } else if (type == IF) {
+        if(s->child[1]->val != 0) {
+            nextLineNum = s->child[1]->val;
+        }
+    } else if (type == END) {
+        nextLineNum = -1;
+    }
 }
 
 void MainWindow::loadFile()

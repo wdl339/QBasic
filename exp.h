@@ -9,12 +9,12 @@ using namespace std;
 
 class Exp
 {
-
 public:
-    QString name;
+    Exp(QString n = "", int v = 0);
     int val;
+    QString name;
     vector<Exp*> child;
-    Exp(QString n = "", int v = 0): name(n), val(v) {};
+    virtual int eval(map<QString, int>& varTable);
     virtual ~Exp();
 };
 
@@ -23,6 +23,7 @@ class VarExp : public Exp
 public:
     VarExp(QString n, int v = 0);
     void checkVaildName(QString s);
+    int eval(map<QString, int>& varTable);
     ~VarExp();
 };
 
@@ -30,28 +31,25 @@ class ConstExp : public Exp
 {
 public:
     ConstExp(int v);
+    int eval(map<QString, int>& varTable);
     ~ConstExp();
 };
 
 class StringExp : public Exp
 {
 public:
-    StringExp(QString n, int v = 0): Exp(n, v) {}
+    StringExp(QString n, int v = 0);
+    int eval(map<QString, int>& varTable);
     virtual ~StringExp();
 };
 
-class IdentifierExp : public Exp
+class CompoundExp : public Exp
 {
 public:
-    IdentifierExp(QString n, int v = 0, Exp* p1 = nullptr, Exp* p2 = nullptr):
-        Exp(n, v)
-    {
-        child.push_back(p1);
-        child.push_back(p2);
-    }
-    ~IdentifierExp();
+    CompoundExp(QString n, int v = 0, Exp* p1 = nullptr, Exp* p2 = nullptr);
+    int eval(map<QString, int>& varTable);
+    ~CompoundExp();
 
 };
 
 #endif // EXP_H
-//13 PRINT -1 + 4 MOD 2 + 4 * 3 / 5 ** 8

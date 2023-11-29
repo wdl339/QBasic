@@ -189,7 +189,7 @@ void Calc::connectSyntaxNode(token t, vector<Exp*>& node)
     } else pLeft = node.back();
     node.pop_back();
 
-    IdentifierExp* res = new IdentifierExp("", 0, pLeft, pRight);
+    CompoundExp* res = new CompoundExp("", 0, pLeft, pRight);
     switch(t) {
         case ADD:
             res->name = "+";

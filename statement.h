@@ -10,14 +10,16 @@
 
 using namespace std;
 
+enum stmtType {REM, LET, PRINT, INPUT, GOTO, IF, END};
+
 class Statement
 {
 public:
     Statement(int num);
+    stmtType type;
     int lineNum;
-    QString treeNode;
     vector<Exp*> child;
-    void run();
+    virtual void run(map<QString, int>& varTable) {}
     virtual ~Statement();
 };
 
@@ -25,42 +27,48 @@ class RemStmt: public Statement
 {
 public:
     RemStmt(int num, QString ss);
-    virtual ~RemStmt();
+    void run(map<QString, int>& varTable) {}
+    ~RemStmt();
 };
 
 class LetStmt: public Statement
 {
 public:
     LetStmt(int num, QString var, QString exp);
-    virtual ~LetStmt();
+    void run(map<QString, int>& varTable) override;
+    ~LetStmt();
 };
 
 class PrintStmt: public Statement
 {
 public:
     PrintStmt(int num, QString ss);
-    virtual ~PrintStmt();
+    void run(map<QString, int>& varTable) override;
+    ~PrintStmt();
 };
 
 class InputStmt: public Statement
 {
 public:
     InputStmt(int num, QString ss);
-    virtual ~InputStmt();
+    void run(map<QString, int>& varTable) {}
+    ~InputStmt();
 };
 
 class GotoStmt: public Statement
 {
 public:
     GotoStmt(int num, int val);
-    virtual ~GotoStmt();
+    void run(map<QString, int>& varTable) {}
+    ~GotoStmt();
 };
 
 class IfStmt: public Statement
 {
 public:
     IfStmt(int num, QString ss);
-    virtual ~IfStmt();
+    void run(map<QString, int>& varTable) override;
+    ~IfStmt();
 
 };
 
@@ -68,7 +76,8 @@ class EndStmt: public Statement
 {
 public:
     EndStmt(int num);
-    virtual ~EndStmt();
+    void run(map<QString, int>& varTable) {}
+    ~EndStmt();
 };
 
 #endif // STATEMENT_H

@@ -23,25 +23,20 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    struct StmtStr {
-        QString s;
-        int lineNum;
-    };
-    vector<StmtStr> stmt;
-    vector<VarExp*> var;
+    map<int, QString> stmt;
+    map<QString, int> varTable;
     MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
     void readStrLine(QString input);
     bool stringIsPosNum(QString s);
-    void deleteStrLine(int num);
     void dealWithCmd(QString s);
-    void pushStmt(StmtStr s);
-    static bool cmp(StmtStr a, StmtStr b);
     void changeCodeDisplay();
 
-    void runCodeLine(int num, QString s);
+    void runCodeLine(Statement* s, int& nextLineNum);
+    void buildSyntaxTree(int num, QString ss, map<int, Statement*>& code);
     void showSyntaxTree(Statement* s);
+    QString getTreeNode(Statement* s);
 
 private slots:
     //    void on_cmdLineEdit_editingFinished();

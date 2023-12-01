@@ -4,6 +4,7 @@
 
 #include <QMainWindow>
 #include <statement.h>
+#include <varstate.h>
 #include <vector>
 #include <queue>
 #include <QFileDialog>
@@ -27,8 +28,8 @@ public:
     enum runMode {RUN, WAIT};
     runMode mode;
     map<int, QString> stmt;
-    map<QString, int> varTable;
-    QString var;
+    map<QString, VarState> varTable;
+    QString varName;
     QEventLoop waitForInput;
     MainWindow(QWidget* parent = nullptr);
     ~MainWindow();

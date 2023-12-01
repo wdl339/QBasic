@@ -34,28 +34,18 @@ CompoundExp::CompoundExp(QString n, int v, Exp* p1, Exp* p2):
     child.push_back(p2);
 }
 
-int Exp::eval(map<QString, int>& varTable)
+int Exp::eval(map<QString, VarState>& varTable)
 {
     return val;
 }
 
-int VarExp::eval(map<QString, int>& varTable)
+int VarExp::eval(map<QString, VarState>& varTable)
 {
-    val = varTable[name];
-    return varTable[name];
-}
-
-int ConstExp::eval(map<QString, int>& varTable)
-{
+    val = varTable[name].value();
     return val;
 }
 
-int StringExp::eval(map<QString, int>& varTable)
-{
-    return val;
-}
-
-int CompoundExp::eval(map<QString, int>& varTable)
+int CompoundExp::eval(map<QString, VarState>& varTable)
 {
     int num1 = child[0]->eval(varTable);
     int num2 = child[1]->eval(varTable);

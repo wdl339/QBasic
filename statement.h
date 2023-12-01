@@ -6,6 +6,7 @@
 #include <vector>
 #include <exp.h>
 #include <calc.h>
+#include <varstate.h>
 #include <QRegularExpression>
 
 using namespace std;
@@ -24,7 +25,7 @@ public:
     QString getChildName();
     int getchildVal(int num);
     virtual QString getRunTime();
-    virtual void run(map<QString, int>& varTable);
+    virtual void run(map<QString, VarState>& varTable);
     ~Statement();
 };
 
@@ -39,7 +40,7 @@ class LetStmt: public Statement
 {
 public:
     LetStmt(int num, QString var, QString exp);
-    void run(map<QString, int>& varTable) override;
+    void run(map<QString, VarState>& varTable) override;
     ~LetStmt();
 };
 
@@ -47,7 +48,7 @@ class PrintStmt: public Statement
 {
 public:
     PrintStmt(int num, QString ss);
-    void run(map<QString, int>& varTable) override;
+    void run(map<QString, VarState>& varTable) override;
     ~PrintStmt();
 };
 
@@ -71,7 +72,7 @@ public:
     int runTimeFalse = 0;
 
     IfStmt(int num, QString ss);
-    void run(map<QString, int>& varTable) override;
+    void run(map<QString, VarState>& varTable) override;
     QString getRunTime() override;
     ~IfStmt();
 

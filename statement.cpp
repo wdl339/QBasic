@@ -12,7 +12,7 @@ Statement::~Statement()
     }
 }
 
-void Statement::run(map<QString, int>& varTable)
+void Statement::run(map<QString, VarState>& varTable)
 {
     runTime += 1;
 }
@@ -107,21 +107,26 @@ EndStmt::EndStmt(int num): Statement(num)
     type = END;
 }
 
-void LetStmt::run(map<QString, int>& varTable)
+void LetStmt::run(map<QString, VarState>& varTable)
 {
     int res = child[1]->eval(varTable);
-    varTable[child[0]->name] = res;
+    QString varName = child[0]->name;
+    if (varTable.find(varName) == varTable.end()) {
+        varTable[varName] = VarState(res);
+    } else {
+        varTable[varName].setValue(res);
+    }
     child[0]->val = res;
     runTime += 1;
 }
 
-void PrintStmt::run(map<QString, int>& varTable)
+void PrintStmt::run(map<QString, VarState>& varTable)
 {
     child[0]->eval(varTable);
     runTime += 1;
 }
 
-void IfStmt::run(map<QString, int>& varTable)
+void IfStmt::run(map<QString, VarState>& varTable)
 {
     child[0]->eval(varTable);
     child[2]->eval(varTable);

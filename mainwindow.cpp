@@ -6,7 +6,7 @@ MainWindow::MainWindow(QWidget* parent)
     , ui(new Ui::MainWindow)
 {
     mode = RUN;
-    var = "";
+    varName = "";
     ui->setupUi(this);
     connect(ui->btnClearCode, SIGNAL(clicked()), this, SLOT(clearAll()));
     connect(ui->btnLoadCode, SIGNAL(clicked()), this, SLOT(loadFile()));
@@ -119,6 +119,7 @@ void MainWindow::runCode()
     try {
         ui->textBrowser->clear();
         ui->treeDisplay->clear();
+        varTable.clear();
         map<int, Statement*> code;
         for (const auto& pair : stmt) {
             QString input = pair.second;
@@ -185,6 +186,10 @@ void MainWindow::showSyntaxTree(Statement* s)
             que.push(ch);
         }
     }
+    bool flagForLet = false;
+    if(s->type == LET) {
+        flagForLet = true;
+    }
 
     while(!que.empty()) {
         int size = que.size();
@@ -196,6 +201,11 @@ void MainWindow::showSyntaxTree(Statement* s)
                 res += "    ";
             }
             res += tmp->name;
+            if (flagForLet) {
+                res += " ";
+                res += QString::number(varTable[tmp->name].useTime());
+                flagForLet = false;
+            }
             if(!(tmp->child).empty()) que.push(tmp->child[0]);
             if((tmp->child).size() == 2) que.push(tmp->child[1]);
         }
@@ -258,7 +268,7 @@ void MainWindow::startWait(Statement* s)
     ui->cmdLineEdit->clear();
     ui->cmdLineEdit->setText("? ");
     mode = WAIT;
-    var = s->getChildName();
+    varName = s->getChildName();
     waitForInput.exec();
 }
 
@@ -274,7 +284,11 @@ void MainWindow::runInput(QString input)
         input = input.section(" ", 1);
     }
     if(stringIsPosNum(input)) {
-        varTable[var] = pos * input.toInt();
+        if (varTable.find(varName) == varTable.end()) {
+            varTable[varName] = VarState(pos * input.toInt());
+        } else {
+            varTable[varName].setValue(pos * input.toInt());
+        }
         ui->cmdLineEdit->clear();
         mode = RUN;
         waitForInput.quit();

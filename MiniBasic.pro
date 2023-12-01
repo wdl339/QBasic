@@ -13,13 +13,15 @@ SOURCES += \
     exp.cpp \
     main.cpp \
     mainwindow.cpp \
-    statement.cpp
+    statement.cpp \
+    varstate.cpp
 
 HEADERS += \
     calc.h \
     exp.h \
     mainwindow.h \
-    statement.h
+    statement.h \
+    varstate.h
 
 FORMS += \
     mainwindow.ui

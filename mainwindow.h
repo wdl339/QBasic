@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTextStream>
+#include <QEventLoop>
 using namespace std;
 
 QT_BEGIN_NAMESPACE
@@ -23,8 +24,12 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    enum runMode {RUN, WAIT};
+    runMode mode;
     map<int, QString> stmt;
     map<QString, int> varTable;
+    QString var;
+    QEventLoop waitForInput;
     MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
@@ -32,6 +37,8 @@ public:
     bool stringIsPosNum(QString s);
     void dealWithCmd(QString s);
     void changeCodeDisplay();
+    void startWait(Statement* s);
+    void runInput(QString s);
 
     void runCodeLine(Statement* s, int& nextLineNum);
     void buildSyntaxTree(int num, QString ss, map<int, Statement*>& code);

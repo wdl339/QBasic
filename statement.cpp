@@ -7,7 +7,29 @@ Statement::Statement(int num)
 
 Statement::~Statement()
 {
+    for (Exp* ch : child) {
+        delete ch;
+    }
+}
 
+void Statement::run(map<QString, int>& varTable)
+{
+    runTime += 1;
+}
+
+QString Statement::getRunTime()
+{
+    return QString::number(runTime);
+}
+
+QString Statement::getChildName()
+{
+    return child[0]->name;
+}
+
+int Statement::getchildVal(int num)
+{
+    return child[num]->val;
 }
 
 RemStmt::RemStmt(int num, QString ss): Statement(num)
@@ -90,11 +112,13 @@ void LetStmt::run(map<QString, int>& varTable)
     int res = child[1]->eval(varTable);
     varTable[child[0]->name] = res;
     child[0]->val = res;
+    runTime += 1;
 }
 
 void PrintStmt::run(map<QString, int>& varTable)
 {
     child[0]->eval(varTable);
+    runTime += 1;
 }
 
 void IfStmt::run(map<QString, int>& varTable)
@@ -117,7 +141,15 @@ void IfStmt::run(map<QString, int>& varTable)
     }
     if(flag) {
         child[1]->val = child[3]->val;
+        runTime += 1;
+    } else {
+        runTimeFalse += 1;
     }
+}
+
+QString IfStmt::getRunTime()
+{
+    return QString::number(runTime) + " " + QString::number(runTimeFalse);
 }
 
 RemStmt::~RemStmt()

@@ -5,6 +5,8 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    mode = RUN;
+    var = "";
     ui->setupUi(this);
     connect(ui->btnClearCode, SIGNAL(clicked()), this, SLOT(clearAll()));
     connect(ui->btnLoadCode, SIGNAL(clicked()), this, SLOT(loadFile()));
@@ -23,6 +25,7 @@ void MainWindow::clearAll()
     ui->textBrowser->clear();
     ui->treeDisplay->clear();
     stmt.clear();
+    varTable.clear();
 }
 
 void MainWindow::codeLineEdit_return()
@@ -30,8 +33,12 @@ void MainWindow::codeLineEdit_return()
     try {
         QString input = ui->cmdLineEdit->text();
         ui->cmdLineEdit->clear();
-        readStrLine(input);
-        changeCodeDisplay();
+        if(mode == RUN) {
+            readStrLine(input);
+            changeCodeDisplay();
+        } else if(mode == WAIT) {
+            runInput(input);
+        }
     } catch (QString error) {
         QMessageBox::critical(this, "Error", error);
     }
@@ -64,28 +71,38 @@ bool MainWindow::stringIsPosNum(QString s)
     return false;
 }
 
-void MainWindow::dealWithCmd(QString s)
+void MainWindow::dealWithCmd(QString input)
 {
-    if (s == "RUN") {
+    if (input == "RUN") {
         runCode();
-    } else if (s == "LOAD") {
+    } else if (input == "LOAD") {
         loadFile();
-    } else if (s == "LIST") {
+    } else if (input == "LIST") {
         // 啥也不干
-    } else if (s == "CLEAR") {
+    } else if (input == "CLEAR") {
         clearAll();
-    } else if (s == "HELP") {
-
-    } else if (s == "QUIT") {
+    } else if (input == "HELP") {
+        // 待完成
+    } else if (input == "QUIT") {
         exit(0);
-    } else if (s == "LET") {
-
-    } else if (s == "PRINT") {
-
-    } else if (s == "INPUT") {
-
     } else {
-        throw QString("非法指令！");
+        input = input.simplified();
+        QString first = input.section(' ', 0, 0);
+        QString second = input.section(' ', 1, 1);
+        if(first == "LET" && input.section(' ', 2, 2) == "=") {
+            input = input.replace("=", " = ").simplified();
+            LetStmt* s = new LetStmt(0, second, input.section(' ', 3));
+            s->run(varTable);
+        } else if(first == "PRINT" && second != "") {
+            PrintStmt* s = new PrintStmt(0, input.section(' ', 1));
+            s->run(varTable);
+            ui->textBrowser->append(QString::number(s->getchildVal(0)));
+        } else if(first == "INPUT" && second != "" && input.section(' ', 2) == "") {
+            InputStmt* s = new InputStmt(0, input.section(' ', 1));
+            startWait(s);
+        } else {
+            throw QString("非法指令！");
+        }
     }
 }
 
@@ -120,6 +137,10 @@ void MainWindow::runCode()
                     nextLineNum = it->first;
                 }
                 runCodeLine(s, nextLineNum);
+                ui->treeDisplay->clear();
+                for (const auto& pair : code) {
+                    showSyntaxTree(pair.second);
+                }
             } while((curLineNum != lastLineNum || nextLineNum != lastLineNum) && nextLineNum != -1);
         }
     } catch (QString error) {
@@ -185,29 +206,29 @@ void MainWindow::showSyntaxTree(Statement* s)
 
 QString MainWindow::getTreeNode(Statement* s)
 {
-    QString treeNode = "";
     QString num = QString::number(s->lineNum);
+    QString treeNode = num + " ";
     switch(s->type) {
         case REM:
-            treeNode = num + " " + "REM";
+            treeNode += ("REM " + s->getRunTime());
             break;
         case LET:
-            treeNode = num + " " + "LET =";
+            treeNode += ("LET = " + s->getRunTime());
             break;
         case PRINT:
-            treeNode = num + " " + "PRINT";
+            treeNode += ("PRINT " + s->getRunTime());
             break;
         case INPUT:
-            treeNode = num + " " + "INPUT";
+            treeNode += ("INPUT " + s->getRunTime());
             break;
         case GOTO:
-            treeNode = num + " " + "GOTO";
+            treeNode += ("GOTO " + s->getRunTime());
             break;
         case IF:
-            treeNode = num + " " + "IF THEN";
+            treeNode += ("IF THEN " + s->getRunTime());
             break;
         case END:
-            treeNode = num + " " + "END";
+            treeNode += ("END " + s->getRunTime());
             break;
     }
     return treeNode;
@@ -218,17 +239,47 @@ void MainWindow::runCodeLine(Statement* s, int& nextLineNum)
     s->run(varTable);
     stmtType type = s->type;
     if(type == INPUT) {
-        //待完成
+        startWait(s);
     } else if (type == PRINT) {
-        ui->textBrowser->append(QString::number(s->child[0]->val));
+        ui->textBrowser->append(QString::number(s->getchildVal(0)));
     } else if (type == GOTO) {
-        nextLineNum = s->child[0]->val;
+        nextLineNum = s->getchildVal(0);
     } else if (type == IF) {
-        if(s->child[1]->val != 0) {
-            nextLineNum = s->child[1]->val;
+        if(s->getchildVal(1) != 0) {
+            nextLineNum = s->getchildVal(1);
         }
     } else if (type == END) {
         nextLineNum = -1;
+    }
+}
+
+void MainWindow::startWait(Statement* s)
+{
+    ui->cmdLineEdit->clear();
+    ui->cmdLineEdit->setText("? ");
+    mode = WAIT;
+    var = s->getChildName();
+    waitForInput.exec();
+}
+
+void MainWindow::runInput(QString input)
+{
+    if(input[0] == "?") {
+        input = input.simplified().section(" ", 1);
+    }
+    input = input.replace("-", "- ").simplified();
+    int pos = 1;
+    if(input[0] == "-") {
+        pos = -1;
+        input = input.section(" ", 1);
+    }
+    if(stringIsPosNum(input)) {
+        varTable[var] = pos * input.toInt();
+        ui->cmdLineEdit->clear();
+        mode = RUN;
+        waitForInput.quit();
+    } else {
+        ui->cmdLineEdit->setText("? ");
     }
 }
 

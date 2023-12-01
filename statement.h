@@ -18,16 +18,20 @@ public:
     Statement(int num);
     stmtType type;
     int lineNum;
+    int runTime = 0;
     vector<Exp*> child;
-    virtual void run(map<QString, int>& varTable) {}
-    virtual ~Statement();
+
+    QString getChildName();
+    int getchildVal(int num);
+    virtual QString getRunTime();
+    virtual void run(map<QString, int>& varTable);
+    ~Statement();
 };
 
 class RemStmt: public Statement
 {
 public:
     RemStmt(int num, QString ss);
-    void run(map<QString, int>& varTable) {}
     ~RemStmt();
 };
 
@@ -51,7 +55,6 @@ class InputStmt: public Statement
 {
 public:
     InputStmt(int num, QString ss);
-    void run(map<QString, int>& varTable) {}
     ~InputStmt();
 };
 
@@ -59,15 +62,17 @@ class GotoStmt: public Statement
 {
 public:
     GotoStmt(int num, int val);
-    void run(map<QString, int>& varTable) {}
     ~GotoStmt();
 };
 
 class IfStmt: public Statement
 {
 public:
+    int runTimeFalse = 0;
+
     IfStmt(int num, QString ss);
     void run(map<QString, int>& varTable) override;
+    QString getRunTime() override;
     ~IfStmt();
 
 };
@@ -76,7 +81,6 @@ class EndStmt: public Statement
 {
 public:
     EndStmt(int num);
-    void run(map<QString, int>& varTable) {}
     ~EndStmt();
 };
 

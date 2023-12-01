@@ -11,10 +11,10 @@ using namespace std;
 class Exp
 {
 public:
-    Exp(QString n = "", int v = 0);
     int val;
     QString name;
     vector<Exp*> child;
+    Exp(QString n = "", int v = 0);
     virtual int eval(map<QString, VarState>& varTable);
     virtual ~Exp();
 };

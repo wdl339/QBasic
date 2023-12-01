@@ -117,18 +117,25 @@ Calc::token Calc::getOp(Exp*& value)
             return ADD;
         case '-':
             if(lastToken != VALUE || lastToken != CPAREN) {
+                QString exp;
                 ++expression;
-                while(*expression && *expression == ' ')
+                bool flag = true;
+                while(*expression && !((*expression == '+' || *expression == '-' || *expression == ')') && flag)) {
+                    if(*expression == '(')
+                        flag = false;
+                    if(*expression == ')')
+                        flag = true;
+                    if(*expression != ' ')
+                        exp += (*expression);
                     ++expression;
-                if(isNum(*expression)) {
-                    int val = 0;
-                    while(isNum(*expression)) {
-                        val = val * 10 + *expression - '0';
-                        ++expression;
-                    }
-                    value = new ConstExp(-val);
-                    return VALUE;
                 }
+                if(stringIsPosNum(exp)) {
+                    value = new ConstExp(-exp.toInt());
+                } else {
+                    Calc calc(exp);
+                    value = new CompoundExp("-", 0, calc.makeSyntaxTree());
+                }
+                return VALUE;
             } else {
                 ++expression;
                 return SUB;
@@ -150,7 +157,7 @@ Calc::token Calc::getOp(Exp*& value)
     throw QString("非法表达式");
 }
 
-bool Calc::stringIsNum(QString s)
+bool Calc::stringIsPosNum(QString s)
 {
     QRegExp regExp("[0-9]+");
     if(regExp.exactMatch(s)) {

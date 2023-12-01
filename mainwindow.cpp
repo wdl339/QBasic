@@ -207,7 +207,7 @@ void MainWindow::showSyntaxTree(Statement* s)
                 flagForLet = false;
             }
             if(!(tmp->child).empty()) que.push(tmp->child[0]);
-            if((tmp->child).size() == 2) que.push(tmp->child[1]);
+            if((tmp->child).size() == 2 && tmp->child[1]) que.push(tmp->child[1]);
         }
         numOfT += 1;
     }

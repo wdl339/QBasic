@@ -49,7 +49,7 @@ Exp* Calc::makeSyntaxTree()
                 break;
             case ADD:
             case SUB:
-                while(!op.empty() && (topOp = op.back()) >= MUL) {
+                while(!op.empty() && (topOp = op.back()) != OPAREN) {
                     op.pop_back();
                     connectSyntaxNode(topOp, node);
                 }
@@ -87,9 +87,9 @@ Calc::token Calc::getOp(Exp*& value)
         while(isLetter(*expression) || isNum(*expression)) {
             s += (*expression);
             ++expression;
-        }
-        if(s == "MOD") {
-            return MOD;
+            if(s == "MOD") {
+                return MOD;
+            }
         }
         value = new VarExp(s);
         return VALUE;
@@ -116,7 +116,7 @@ Calc::token Calc::getOp(Exp*& value)
             ++expression;
             return ADD;
         case '-':
-            if(lastToken != VALUE || lastToken != CPAREN) {
+            if(lastToken != VALUE && lastToken != CPAREN) {
                 QString exp;
                 ++expression;
                 bool flag = true;

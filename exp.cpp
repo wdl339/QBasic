@@ -49,6 +49,7 @@ int CompoundExp::eval(map<QString, VarState>& varTable)
 {
     int num1 = child[0]->eval(varTable);
     int res = 0;
+    int num2;
     if (name == "+") res = num1 + child[1]->eval(varTable);
     if (name == "-") {
         if(child[1]) {
@@ -63,10 +64,15 @@ int CompoundExp::eval(map<QString, VarState>& varTable)
         if (dividend == 0) throw("除0");
         res = num1 / dividend;
     }
-    if (name == "MOD") res = num1 % child[1]->eval(varTable);
+    if (name == "MOD") {
+        num2 = child[1]->eval(varTable);
+        res = num1 % num2;
+        if(res * num2 < 0)
+            res += num2;
+    }
     if (name == "**") {
         res = 1;
-        int num2 = child[1]->eval(varTable);
+        num2 = child[1]->eval(varTable);
         for(int i = 0; i < num2; i++) {
             res *= num1;
         }

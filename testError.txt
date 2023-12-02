@@ -1,0 +1,13 @@
+100 RE M 1111
+110 LET a - 1
+120 LET 12a = 12
+130 LET a = 7
+140 INPUT 5
+150 LET b = 14 + (5 / - 3
+160 PRINT a + 1
+170 PRINT a **
+180 GOTO a
+190 IF a <= 5 THEN 100
+200 IF a < (3 + a) THEN a
+210 END 1
+220 END

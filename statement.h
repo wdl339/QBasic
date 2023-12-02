@@ -11,7 +11,7 @@
 
 using namespace std;
 
-enum stmtType {REM, LET, PRINT, INPUT, GOTO, IF, END};
+enum stmtType {REM, LET, PRINT, INPUT, GOTO, IF, END, ERROR};
 
 class Statement
 {
@@ -24,6 +24,7 @@ public:
 
     QString getChildName();
     int getchildVal(int num);
+    bool stringIsPosNum(QString s);
     virtual QString getRunTime();
     virtual void run(map<QString, VarState>& varTable);
     ~Statement();
@@ -83,6 +84,13 @@ class EndStmt: public Statement
 public:
     EndStmt(int num);
     ~EndStmt();
+};
+
+class ErrorStmt: public Statement
+{
+public:
+    ErrorStmt(int num);
+    ~ErrorStmt();
 };
 
 #endif // STATEMENT_H

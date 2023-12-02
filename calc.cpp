@@ -87,9 +87,9 @@ Calc::token Calc::getOp(Exp*& value)
         while(isLetter(*expression) || isNum(*expression)) {
             s += (*expression);
             ++expression;
-            if(s == "MOD") {
-                return MOD;
-            }
+        }
+        if(s == "MOD") {
+            return MOD;
         }
         value = new VarExp(s);
         return VALUE;
@@ -196,28 +196,30 @@ void Calc::connectSyntaxNode(token t, vector<Exp*>& node)
     } else pLeft = node.back();
     node.pop_back();
 
-    CompoundExp* res = new CompoundExp("", 0, pLeft, pRight);
+    QString name = "";
     switch(t) {
         case ADD:
-            res->name = "+";
+            name = "+";
             break;
         case SUB:
-            res->name = "-";
+            name = "-";
             break;
         case MUL:
-            res->name = "*";
+            name = "*";
             break;
         case DIV:
-            res->name = "/";
+            name = "/";
             break;
         case MOD:
-            res->name = "MOD";
+            name = "MOD";
             break;
         case POW:
-            res->name = "**";
+            name = "**";
             break;
         default:
+            throw QString("非法表达式");
             break;
     }
+    CompoundExp* res = new CompoundExp(name, 0, pLeft, pRight);
     node.push_back(res);
 }

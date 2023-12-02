@@ -42,16 +42,16 @@ RemStmt::RemStmt(int num, QString ss): Statement(num)
 LetStmt::LetStmt(int num, QString var, QString exp): Statement(num)
 {
     VarExp* varExp = new VarExp(var);
+    Calc* calc = new Calc(exp);
     child.push_back(varExp);
-    Calc calc(exp);
-    child.push_back(calc.makeSyntaxTree());
+    child.push_back(calc->makeSyntaxTree());
     type = LET;
 }
 
 PrintStmt::PrintStmt(int num, QString ss): Statement(num)
 {
-    Calc calc(ss);
-    child.push_back(calc.makeSyntaxTree());
+    Calc* calc = new Calc(ss);
+    child.push_back(calc->makeSyntaxTree());
     type = PRINT;
 }
 
@@ -79,25 +79,29 @@ IfStmt::IfStmt(int num, QString ss): Statement(num)
         QRegularExpression regex("(.*)\\s*([<>=])\\s*(.*)");
         QRegularExpressionMatch match = regex.match(expBeforeThen);
 
-        if (match.hasMatch()) {
+        if (match.hasMatch() && stringIsPosNum(expAfterThen)) {
             QString exp1 = match.captured(1).trimmed();
             QString op = match.captured(2).trimmed();
             QString exp2 = match.captured(3).trimmed();
 
-            Calc calc(exp1);
-            child.push_back(calc.makeSyntaxTree());
+            if(op != "=" && op != "<" && op != ">") {
+                throw QString("非法op");
+            }
+
+            Calc* calc = new Calc(exp1);
+            child.push_back(calc->makeSyntaxTree());
             StringExp* com = new StringExp(op);
             child.push_back(com);
-            Calc calc2(exp2);
-            child.push_back(calc2.makeSyntaxTree());
+            Calc* calc2 = new Calc(exp2);
+            child.push_back(calc2->makeSyntaxTree());
+            ConstExp* n = new ConstExp(expAfterThen.toInt());
+            child.push_back(n);
 
         } else {
-            throw QString("非法输入");
+            throw QString("非法语句");
         }
-        ConstExp* n = new ConstExp(expAfterThen.toInt());
-        child.push_back(n);
     } else {
-        throw QString("非法输入");
+        throw QString("非法语句");
     }
     type = IF;
 }
@@ -105,6 +109,20 @@ IfStmt::IfStmt(int num, QString ss): Statement(num)
 EndStmt::EndStmt(int num): Statement(num)
 {
     type = END;
+}
+
+ErrorStmt::ErrorStmt(int num): Statement(num)
+{
+    type = ERROR;
+}
+
+bool Statement::stringIsPosNum(QString s)
+{
+    QRegExp regExp("[0-9]+");
+    if(regExp.exactMatch(s)) {
+        return true;
+    }
+    return false;
 }
 
 void LetStmt::run(map<QString, VarState>& varTable)
@@ -148,6 +166,7 @@ void IfStmt::run(map<QString, VarState>& varTable)
         child[1]->val = child[3]->val;
         runTime += 1;
     } else {
+        child[1]->val = 0;
         runTimeFalse += 1;
     }
 }
@@ -202,7 +221,10 @@ IfStmt::~IfStmt()
 
 EndStmt::~EndStmt()
 {
-    for (Exp* ch : child) {
-        delete ch;
-    }
+
+}
+
+ErrorStmt::~ErrorStmt()
+{
+
 }

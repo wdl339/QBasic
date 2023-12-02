@@ -37,11 +37,12 @@ public:
     void readStrLine(QString input);
     bool stringIsPosNum(QString s);
     void dealWithCmd(QString s);
+    void help();
     void changeCodeDisplay();
     void startWait(Statement* s);
     void runInput(QString s);
 
-    void runCodeLine(Statement* s, int& nextLineNum);
+    void runCodeLine(Statement* s, int& nextLineNum, map<int, Statement*>& code);
     void buildSyntaxTree(int num, QString ss, map<int, Statement*>& code);
     void showSyntaxTree(Statement* s);
     QString getTreeNode(Statement* s);

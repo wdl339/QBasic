@@ -82,7 +82,7 @@ void MainWindow::dealWithCmd(QString input)
     } else if (input == "CLEAR") {
         clearAll();
     } else if (input == "HELP") {
-        // 待完成
+        help();
     } else if (input == "QUIT") {
         exit(0);
     } else {
@@ -101,9 +101,26 @@ void MainWindow::dealWithCmd(QString input)
             InputStmt* s = new InputStmt(0, input.section(' ', 1));
             startWait(s);
         } else {
-            throw QString("非法指令！");
+            throw QString("非法指令");
         }
     }
+}
+
+void MainWindow::help()
+{
+    QString s = "这是一个Basic解释器\n"
+                "实现了LET PRINT INPUT GOTO IF REM END语句\n"
+                "还有 RUN LOAD CLEAR HELP QUIT指令\n"
+                "支持+ - * / MOD **运算，仅限于int类型\n"
+                "IF语句支持= > <的比较\n"
+                "大概就说这么多吧";
+    QMessageBox mess(QMessageBox::NoIcon, tr("HELP"), s);
+    QPushButton* button1 = (mess.addButton(tr("OK"), QMessageBox::ActionRole));
+    mess.setDefaultButton(button1);
+    mess.setStyleSheet("QLabel{min-width: 600px; min-height: 300px; font-size: 24px;}");
+    mess.exec();
+    if (mess.clickedButton() == button1)
+        return;
 }
 
 void MainWindow::changeCodeDisplay()
@@ -116,11 +133,11 @@ void MainWindow::changeCodeDisplay()
 
 void MainWindow::runCode()
 {
+    ui->textBrowser->clear();
+    ui->treeDisplay->clear();
+    varTable.clear();
+    map<int, Statement*> code;
     try {
-        ui->textBrowser->clear();
-        ui->treeDisplay->clear();
-        varTable.clear();
-        map<int, Statement*> code;
         for (const auto& pair : stmt) {
             QString input = pair.second;
             input = input.replace("=", " = ").replace(">", " > ").replace("<", " < ");
@@ -137,7 +154,7 @@ void MainWindow::runCode()
                     auto it = code.upper_bound(curLineNum);
                     nextLineNum = it->first;
                 }
-                runCodeLine(s, nextLineNum);
+                runCodeLine(s, nextLineNum, code);
                 ui->treeDisplay->clear();
                 for (const auto& pair : code) {
                     showSyntaxTree(pair.second);
@@ -154,23 +171,30 @@ void MainWindow::buildSyntaxTree(int num, QString ss, map<int, Statement*>& code
     QString first = ss.section(' ', 0, 0);
     QString second = ss.section(' ', 1, 1);
     Statement* s;
-    if (first == "REM") {
-        s = new RemStmt(num, ss.section(' ', 1));
-    } else if (first == "LET" && ss.section(' ', 2, 2) == "=") {
-        s = new LetStmt(num, ss.section(' ', 1, 1), ss.section(' ', 3));
-    } else if (first == "PRINT" && second != "") {
-        s = new PrintStmt(num, ss.section(' ', 1));
-    } else if (first == "INPUT" && second != "" && ss.section(' ', 2) == "") {
-        s = new InputStmt(num, second);
-    } else if (first == "GOTO" && stringIsPosNum(second) && ss.section(' ', 2) == "") {
-        s = new GotoStmt(num, second.toInt());
-    } else if (first == "IF") {
-        s = new IfStmt(num, ss.section(' ', 1));
-    } else if (first == "END" && ss.section(' ', 1) == "") {
-        s = new EndStmt(num);
-    } else {
-        throw QString("非法输入！");
+    try {
+        if (first == "REM") {
+            s = new RemStmt(num, ss.section(' ', 1));
+        } else if (first == "LET" && ss.section(' ', 2, 2) == "=") {
+            s = new LetStmt(num, ss.section(' ', 1, 1), ss.section(' ', 3));
+        } else if (first == "PRINT" && second != "") {
+            s = new PrintStmt(num, ss.section(' ', 1));
+        } else if (first == "INPUT" && second != "" && ss.section(' ', 2) == "") {
+            s = new InputStmt(num, second);
+        } else if (first == "GOTO" && stringIsPosNum(second) && ss.section(' ', 2) == "") {
+            s = new GotoStmt(num, second.toInt());
+        } else if (first == "IF") {
+            s = new IfStmt(num, ss.section(' ', 1));
+        } else if (first == "END" && ss.section(' ', 1) == "") {
+            s = new EndStmt(num);
+        } else {
+            throw QString("非法语句");
+        }
+    } catch (QString error) {
+        QString info = "行号" + QString::number(num) + " " + error;
+        QMessageBox::critical(this, "Error", info);
+        s = new ErrorStmt(num);
     }
+
     code[num] = s;
     showSyntaxTree(s);
 }
@@ -203,7 +227,11 @@ void MainWindow::showSyntaxTree(Statement* s)
             res += tmp->name;
             if (flagForLet) {
                 res += " ";
-                res += QString::number(varTable[tmp->name].useTime());
+                if (varTable.find(tmp->name) == varTable.end()) {
+                    res += "0";
+                } else {
+                    res += QString::number(varTable[tmp->name].useTime());
+                }
                 flagForLet = false;
             }
             if(!(tmp->child).empty()) que.push(tmp->child[0]);
@@ -240,27 +268,45 @@ QString MainWindow::getTreeNode(Statement* s)
         case END:
             treeNode += ("END " + s->getRunTime());
             break;
+        case ERROR:
+            treeNode += ("ERROR");
+            break;
     }
     return treeNode;
 }
 
-void MainWindow::runCodeLine(Statement* s, int& nextLineNum)
+void MainWindow::runCodeLine(Statement* s, int& nextLineNum, map<int, Statement*>& code)
 {
-    s->run(varTable);
-    stmtType type = s->type;
-    if(type == INPUT) {
-        startWait(s);
-    } else if (type == PRINT) {
-        ui->textBrowser->append(QString::number(s->getchildVal(0)));
-    } else if (type == GOTO) {
-        nextLineNum = s->getchildVal(0);
-    } else if (type == IF) {
-        if(s->getchildVal(1) != 0) {
-            nextLineNum = s->getchildVal(1);
+    try {
+        s->run(varTable);
+        stmtType type = s->type;
+        if(type == INPUT) {
+            startWait(s);
+        } else if (type == PRINT) {
+            ui->textBrowser->append(QString::number(s->getchildVal(0)));
+        } else if (type == GOTO) {
+            int num = s->getchildVal(0);
+            if (code.find(num) == code.end()) {
+                throw QString("跳转到不存在的行号");
+            } else {
+                nextLineNum = num;
+            }
+        } else if (type == IF) {
+            int num = s->getchildVal(1);
+            if(num != 0) {
+                if (code.find(num) == code.end()) {
+                    throw QString("跳转到不存在的行号");
+                } else {
+                    nextLineNum = num;
+                }
+            }
+        } else if (type == END) {
+            nextLineNum = -1;
         }
-    } else if (type == END) {
-        nextLineNum = -1;
+    } catch (QString error) {
+        ui->textBrowser->append("error 行号" + QString::number(s->lineNum) + " " + error);
     }
+
 }
 
 void MainWindow::startWait(Statement* s)

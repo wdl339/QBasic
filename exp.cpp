@@ -41,6 +41,9 @@ int Exp::eval(map<QString, VarState>& varTable)
 
 int VarExp::eval(map<QString, VarState>& varTable)
 {
+    if (varTable.find(name) == varTable.end()) {
+        throw QString("不存在的变量");
+    }
     val = varTable[name].value();
     return val;
 }
@@ -61,7 +64,7 @@ int CompoundExp::eval(map<QString, VarState>& varTable)
     if (name == "*") res = num1 * child[1]->eval(varTable);
     if (name == "/") {
         int dividend = child[1]->eval(varTable);
-        if (dividend == 0) throw("除0");
+        if (dividend == 0) throw QString("除0错误");
         res = num1 / dividend;
     }
     if (name == "MOD") {
@@ -73,6 +76,9 @@ int CompoundExp::eval(map<QString, VarState>& varTable)
     if (name == "**") {
         res = 1;
         num2 = child[1]->eval(varTable);
+        if (num2 < 0) {
+            throw QString("不支持指数为负数");
+        }
         for(int i = 0; i < num2; i++) {
             res *= num1;
         }

@@ -13,6 +13,7 @@ SOURCES += \
     exp.cpp \
     main.cpp \
     mainwindow.cpp \
+    parser.cpp \
     statement.cpp \
     varstate.cpp
 
@@ -20,6 +21,7 @@ HEADERS += \
     calc.h \
     exp.h \
     mainwindow.h \
+    parser.h \
     statement.h \
     varstate.h
 

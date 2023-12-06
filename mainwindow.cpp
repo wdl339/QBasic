@@ -1,6 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+//
+// 主界面的构造函数，初始运行模式为RUN
+//
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -14,28 +17,40 @@ MainWindow::MainWindow(QWidget* parent)
     connect(ui->cmdLineEdit, SIGNAL(returnPressed()), this, SLOT(codeLineEdit_return()));
 }
 
+//
+// 主界面的析构函数
+//
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
+//
+// clearAll()清除当前所有状态
+//
 void MainWindow::clearAll()
 {
     ui->CodeDisplay->clear();
     ui->textBrowser->clear();
     ui->treeDisplay->clear();
+    // 程序的一些状态也清除
     stmt.clear();
     varTable.clear();
 }
 
+//
+// codeLineEdit_return()处理按下回车键后的操作
+//
 void MainWindow::codeLineEdit_return()
 {
     try {
         QString input = ui->cmdLineEdit->text();
         ui->cmdLineEdit->clear();
+        // 在RUN模式下，读进输入的代码，并改变display
         if(mode == RUN) {
             readStrLine(input);
             changeCodeDisplay();
+            // 在WAIT模式下，处理用户输入的INPUT的值
         } else if(mode == WAIT) {
             runInput(input);
         }
@@ -44,41 +59,42 @@ void MainWindow::codeLineEdit_return()
     }
 }
 
+//
+// readStrLine以字符串input为参数，处理用户输入的input
+//
 void MainWindow::readStrLine(QString input)
 {
+    // 假如只输入数字，表明删除一行代码
     if(stringIsPosNum(input)) {
         stmt.erase(input.toInt());
         return;
     }
-    QString first = input.section(' ', 0, 0);
+    // 对输入按空格分段，如果输入的第一段不是行号，说明输入了指令
+    QString first = firstPart(input);
     if(!stringIsPosNum(first)) {
-        dealWithCmd(input);
+        dealWithCmd(input.simplified());
         return;
     }
     int num = first.toInt();
     if(num >= 1000000) {
         throw QString("行号错误");
     }
+    // 有行号，储存输入的语句，以便展示
     stmt[num] = input;
 }
 
-bool MainWindow::stringIsPosNum(QString s)
-{
-    QRegExp regExp("[0-9]+");
-    if(regExp.exactMatch(s)) {
-        return true;
-    }
-    return false;
-}
-
+//
+// dealWithCmd以字符串input为参数，处理input代表的指令
+//
 void MainWindow::dealWithCmd(QString input)
 {
+    // 常见指令*6
     if (input == "RUN") {
         runCode();
     } else if (input == "LOAD") {
         loadFile();
     } else if (input == "LIST") {
-        // 啥也不干
+        // LIST啥也不干
     } else if (input == "CLEAR") {
         clearAll();
     } else if (input == "HELP") {
@@ -86,26 +102,29 @@ void MainWindow::dealWithCmd(QString input)
     } else if (input == "QUIT") {
         exit(0);
     } else {
-        input = input.simplified();
-        QString first = input.section(' ', 0, 0);
-        QString second = input.section(' ', 1, 1);
-        if(first == "LET" && input.section(' ', 2, 2) == "=") {
+        // 到此，可能是不带行号的语句*3
+        if(isLet(input)) {
             input = input.replace("=", " = ").simplified();
-            LetStmt* s = new LetStmt(0, second, input.section(' ', 3));
+            LetStmt* s = new LetStmt(0, secondPart(input), afterThirdPart(input));
             s->run(varTable);
-        } else if(first == "PRINT" && second != "") {
-            PrintStmt* s = new PrintStmt(0, input.section(' ', 1));
+        } else if(isPrint(input)) {
+            PrintStmt* s = new PrintStmt(0, afterFirstPart(input));
             s->run(varTable);
+            // 在ui上打印出
             ui->textBrowser->append(QString::number(s->getchildVal(0)));
-        } else if(first == "INPUT" && second != "" && input.section(' ', 2) == "") {
-            InputStmt* s = new InputStmt(0, input.section(' ', 1));
+        } else if(isInput(input)) {
+            InputStmt* s = new InputStmt(0, afterFirstPart(input));
             startWait(s);
         } else {
+            // 处理非法指令
             throw QString("非法指令");
         }
     }
 }
 
+//
+// help()弹出help界面
+//
 void MainWindow::help()
 {
     QString s = "这是一个Basic解释器\n"
@@ -123,9 +142,13 @@ void MainWindow::help()
         return;
 }
 
+//
+// changeCodeDisplay()在每次输入新语句后，重新显示代码
+//
 void MainWindow::changeCodeDisplay()
 {
     ui->CodeDisplay->clear();
+    // map类型的stmt会自动将语句排好序
     for (const auto& pair : stmt) {
         ui->CodeDisplay->append(pair.second);
     }
@@ -141,7 +164,7 @@ void MainWindow::runCode()
         for (const auto& pair : stmt) {
             QString input = pair.second;
             input = input.replace("=", " = ").replace(">", " > ").replace("<", " < ");
-            buildSyntaxTree(pair.first, (input.section(' ', 1)).simplified(), code);
+            buildSyntaxTree(pair.first, (afterFirstPart(input)).simplified(), code);
         }
         if(!code.empty()) {
             int curLineNum = 0;
@@ -166,25 +189,26 @@ void MainWindow::runCode()
     }
 }
 
-void MainWindow::buildSyntaxTree(int num, QString ss, map<int, Statement*>& code)
+void MainWindow::buildSyntaxTree(int num, QString input, map<int, Statement*>& code)
 {
-    QString first = ss.section(' ', 0, 0);
-    QString second = ss.section(' ', 1, 1);
+    QString first = firstPart(input);
+    QString second = secondPart(input);
+    QString afterFirst = afterFirstPart(input);
     Statement* s;
     try {
         if (first == "REM") {
-            s = new RemStmt(num, ss.section(' ', 1));
-        } else if (first == "LET" && ss.section(' ', 2, 2) == "=") {
-            s = new LetStmt(num, ss.section(' ', 1, 1), ss.section(' ', 3));
-        } else if (first == "PRINT" && second != "") {
-            s = new PrintStmt(num, ss.section(' ', 1));
-        } else if (first == "INPUT" && second != "" && ss.section(' ', 2) == "") {
+            s = new RemStmt(num, afterFirst);
+        } else if (isLet(input)) {
+            s = new LetStmt(num, second, afterThirdPart(input));
+        } else if (isPrint(input)) {
+            s = new PrintStmt(num, afterFirst);
+        } else if (isInput(input)) {
             s = new InputStmt(num, second);
-        } else if (first == "GOTO" && stringIsPosNum(second) && ss.section(' ', 2) == "") {
+        } else if (isGoto(input)) {
             s = new GotoStmt(num, second.toInt());
         } else if (first == "IF") {
-            s = new IfStmt(num, ss.section(' ', 1));
-        } else if (first == "END" && ss.section(' ', 1) == "") {
+            s = new IfStmt(num, afterFirst);
+        } else if (isEnd(input)) {
             s = new EndStmt(num);
         } else {
             throw QString("非法语句");
@@ -321,13 +345,13 @@ void MainWindow::startWait(Statement* s)
 void MainWindow::runInput(QString input)
 {
     if(input[0] == "?") {
-        input = input.simplified().section(" ", 1);
+        input = afterFirstPart(input.simplified());
     }
     input = input.replace("-", "- ").simplified();
     int pos = 1;
     if(input[0] == "-") {
         pos = -1;
-        input = input.section(" ", 1);
+        input = afterFirstPart(input);
     }
     if(stringIsPosNum(input)) {
         if (varTable.find(varName) == varTable.end()) {

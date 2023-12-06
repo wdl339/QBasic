@@ -82,9 +82,9 @@ Calc::token Calc::getOp(Exp*& value)
 
     if(*expression == '\0') return EOL;
 
-    if(isLetter(*expression)) {
+    if(isLetter(*expression) || *expression == '_') {
         QString s = "";
-        while(isLetter(*expression) || isNum(*expression)) {
+        while(isLetter(*expression) || isNum(*expression) || *expression == '_') {
             s += (*expression);
             ++expression;
         }
@@ -132,8 +132,8 @@ Calc::token Calc::getOp(Exp*& value)
                 if(stringIsPosNum(exp)) {
                     value = new ConstExp(-exp.toInt());
                 } else {
-                    Calc calc(exp);
-                    value = new CompoundExp("-", 0, calc.makeSyntaxTree());
+                    Calc* calc = new Calc(exp);
+                    value = new CompoundExp("-", 0, calc->makeSyntaxTree());
                 }
                 return VALUE;
             } else {

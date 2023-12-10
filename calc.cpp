@@ -1,5 +1,7 @@
 #include "calc.h"
 
+extern bool stringIsPosNum(QString& s);
+
 Calc::Calc(QString ss)
 {
     string str = ss.toStdString();
@@ -155,15 +157,6 @@ Calc::token Calc::getOp(Exp*& value)
     }
 
     throw QString("非法表达式");
-}
-
-bool Calc::stringIsPosNum(QString s)
-{
-    QRegExp regExp("[0-9]+");
-    if(regExp.exactMatch(s)) {
-        return true;
-    }
-    return false;
 }
 
 bool Calc::isLetter(char c)

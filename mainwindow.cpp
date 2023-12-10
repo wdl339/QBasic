@@ -8,8 +8,7 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    mode = RUN;
-    varName = "";
+    program = new Program();
     ui->setupUi(this);
     connect(ui->btnClearCode, SIGNAL(clicked()), this, SLOT(clearAll()));
     connect(ui->btnLoadCode, SIGNAL(clicked()), this, SLOT(loadFile()));
@@ -23,6 +22,7 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete program;
 }
 
 //
@@ -34,8 +34,7 @@ void MainWindow::clearAll()
     ui->textBrowser->clear();
     ui->treeDisplay->clear();
     // 程序的一些状态也清除
-    stmt.clear();
-    varTable.clear();
+    program->clearAll();
 }
 
 //
@@ -47,11 +46,11 @@ void MainWindow::codeLineEdit_return()
         QString input = ui->cmdLineEdit->text();
         ui->cmdLineEdit->clear();
         // 在RUN模式下，读进输入的代码，并改变display
-        if(mode == RUN) {
+        if(program->isRun()) {
             readStrLine(input);
             changeCodeDisplay();
             // 在WAIT模式下，处理用户输入的INPUT的值
-        } else if(mode == WAIT) {
+        } else {
             runInput(input);
         }
     } catch (QString error) {
@@ -66,7 +65,7 @@ void MainWindow::readStrLine(QString input)
 {
     // 假如只输入数字，表明删除一行代码
     if(stringIsPosNum(input)) {
-        stmt.erase(input.toInt());
+        program->erase(input.toInt());
         return;
     }
     // 对输入按空格分段，如果输入的第一段不是行号，说明输入了指令
@@ -80,7 +79,7 @@ void MainWindow::readStrLine(QString input)
         throw QString("行号错误");
     }
     // 有行号，储存输入的语句，以便展示
-    stmt[num] = input;
+    program->add(num, input);
 }
 
 //
@@ -106,10 +105,10 @@ void MainWindow::dealWithCmd(QString input)
         if(isLet(input)) {
             input = input.replace("=", " = ").simplified();
             LetStmt* s = new LetStmt(0, secondPart(input), afterThirdPart(input));
-            s->run(varTable);
+            s->run(program->varTable);
         } else if(isPrint(input)) {
             PrintStmt* s = new PrintStmt(0, afterFirstPart(input));
-            s->run(varTable);
+            s->run(program->varTable);
             // 在ui上打印出
             ui->textBrowser->append(QString::number(s->getchildVal(0)));
         } else if(isInput(input)) {
@@ -149,7 +148,7 @@ void MainWindow::changeCodeDisplay()
 {
     ui->CodeDisplay->clear();
     // map类型的stmt会自动将语句排好序
-    for (const auto& pair : stmt) {
+    for (const auto& pair : program->stmt) {
         ui->CodeDisplay->append(pair.second);
     }
 }
@@ -158,10 +157,10 @@ void MainWindow::runCode()
 {
     ui->textBrowser->clear();
     ui->treeDisplay->clear();
-    varTable.clear();
-    map<int, Statement*> code;
+    //varTable.clear();
     try {
-        for (const auto& pair : stmt) {
+        map<int, Statement*> code;
+        for (const auto& pair : program->stmt) {
             QString input = pair.second;
             input = input.replace("=", " = ").replace(">", " > ").replace("<", " < ");
             buildSyntaxTree(pair.first, (afterFirstPart(input)).simplified(), code);
@@ -225,84 +224,14 @@ void MainWindow::buildSyntaxTree(int num, QString input, map<int, Statement*>& c
 
 void MainWindow::showSyntaxTree(Statement* s)
 {
-    QString res = getTreeNode(s);
-    queue<Exp*> que;
-    Exp* tmp;
-    int numOfT = 1;
-    if(!(s->child).empty()) {
-        for (Exp* ch : s->child) {
-            que.push(ch);
-        }
-    }
-    bool flagForLet = false;
-    if(s->type == LET) {
-        flagForLet = true;
-    }
-
-    while(!que.empty()) {
-        int size = que.size();
-        for(int j = 0; j < size; j++) {
-            res += '\n';
-            tmp = que.front();
-            que.pop();
-            for(int i = 0; i < numOfT; i++) {
-                res += "    ";
-            }
-            res += tmp->name;
-            if (flagForLet) {
-                res += " ";
-                if (varTable.find(tmp->name) == varTable.end()) {
-                    res += "0";
-                } else {
-                    res += QString::number(varTable[tmp->name].useTime());
-                }
-                flagForLet = false;
-            }
-            if(!(tmp->child).empty()) que.push(tmp->child[0]);
-            if((tmp->child).size() == 2 && tmp->child[1]) que.push(tmp->child[1]);
-        }
-        numOfT += 1;
-    }
+    QString res = s->syntaxTreeStr(program);
     ui->treeDisplay->append(res);
-}
-
-QString MainWindow::getTreeNode(Statement* s)
-{
-    QString num = QString::number(s->lineNum);
-    QString treeNode = num + " ";
-    switch(s->type) {
-        case REM:
-            treeNode += ("REM " + s->getRunTime());
-            break;
-        case LET:
-            treeNode += ("LET = " + s->getRunTime());
-            break;
-        case PRINT:
-            treeNode += ("PRINT " + s->getRunTime());
-            break;
-        case INPUT:
-            treeNode += ("INPUT " + s->getRunTime());
-            break;
-        case GOTO:
-            treeNode += ("GOTO " + s->getRunTime());
-            break;
-        case IF:
-            treeNode += ("IF THEN " + s->getRunTime());
-            break;
-        case END:
-            treeNode += ("END " + s->getRunTime());
-            break;
-        case ERROR:
-            treeNode += ("ERROR");
-            break;
-    }
-    return treeNode;
 }
 
 void MainWindow::runCodeLine(Statement* s, int& nextLineNum, map<int, Statement*>& code)
 {
     try {
-        s->run(varTable);
+        s->run(program->varTable);
         stmtType type = s->type;
         if(type == INPUT) {
             startWait(s);
@@ -328,7 +257,7 @@ void MainWindow::runCodeLine(Statement* s, int& nextLineNum, map<int, Statement*
             nextLineNum = -1;
         }
     } catch (QString error) {
-        ui->textBrowser->append("error 行号" + QString::number(s->lineNum) + " " + error);
+        ui->textBrowser->append("error 行号" + QString::number(s->getLineNum()) + " " + error);
     }
 
 }
@@ -337,8 +266,7 @@ void MainWindow::startWait(Statement* s)
 {
     ui->cmdLineEdit->clear();
     ui->cmdLineEdit->setText("? ");
-    mode = WAIT;
-    varName = s->getChildName();
+    program->startWaitVar(s->getWaitVarName());
     waitForInput.exec();
 }
 
@@ -354,13 +282,8 @@ void MainWindow::runInput(QString input)
         input = afterFirstPart(input);
     }
     if(stringIsPosNum(input)) {
-        if (varTable.find(varName) == varTable.end()) {
-            varTable[varName] = VarState(pos * input.toInt());
-        } else {
-            varTable[varName].setValue(pos * input.toInt());
-        }
+        program->setWaitVar(pos * input.toInt());
         ui->cmdLineEdit->clear();
-        mode = RUN;
         waitForInput.quit();
     } else {
         ui->cmdLineEdit->setText("? ");

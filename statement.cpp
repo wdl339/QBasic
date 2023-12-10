@@ -1,5 +1,7 @@
 #include "statement.h"
 
+extern bool stringIsPosNum(QString& s);
+
 Statement::Statement(int num)
 {
     lineNum = num;
@@ -22,7 +24,7 @@ QString Statement::getRunTime()
     return QString::number(runTime);
 }
 
-QString Statement::getChildName()
+QString Statement::getWaitVarName()
 {
     return child[0]->name;
 }
@@ -30,6 +32,11 @@ QString Statement::getChildName()
 int Statement::getchildVal(int num)
 {
     return child[num]->val;
+}
+
+int Statement::getLineNum()
+{
+    return lineNum;
 }
 
 RemStmt::RemStmt(int num, QString ss): Statement(num)
@@ -116,15 +123,6 @@ ErrorStmt::ErrorStmt(int num): Statement(num)
     type = ERROR;
 }
 
-bool Statement::stringIsPosNum(QString s)
-{
-    QRegExp regExp("[0-9]+");
-    if(regExp.exactMatch(s)) {
-        return true;
-    }
-    return false;
-}
-
 void LetStmt::run(map<QString, VarState>& varTable)
 {
     int res = child[1]->eval(varTable);
@@ -176,55 +174,102 @@ QString IfStmt::getRunTime()
     return QString::number(runTime) + " " + QString::number(runTimeFalse);
 }
 
-RemStmt::~RemStmt()
+QString Statement::syntaxTreeStr(Program*& program)
 {
-    for (Exp* ch : child) {
-        delete ch;
+    QString res = getTreeNode();
+    queue<Exp*> que;
+    Exp* tmp;
+    int numOfT = 1;
+    if(!child.empty()) {
+        for (Exp* ch : child) {
+            que.push(ch);
+        }
     }
-}
-
-LetStmt::~LetStmt()
-{
-    for (Exp* ch : child) {
-        delete ch;
+    bool flagForLet = false;
+    if(type == LET) {
+        flagForLet = true;
     }
-}
 
-PrintStmt::~PrintStmt()
-{
-    for (Exp* ch : child) {
-        delete ch;
+    while(!que.empty()) {
+        int size = que.size();
+        for(int j = 0; j < size; j++) {
+            res += '\n';
+            tmp = que.front();
+            que.pop();
+            for(int i = 0; i < numOfT; i++) {
+                res += "    ";
+            }
+            res += tmp->name;
+            if (flagForLet) {
+                res += (" " + QString::number(program->useTimeof(tmp->name)));
+                flagForLet = false;
+            }
+            if(!(tmp->child).empty()) que.push(tmp->child[0]);
+            if((tmp->child).size() == 2 && tmp->child[1]) que.push(tmp->child[1]);
+        }
+        numOfT += 1;
     }
+
+    return res;
 }
 
-
-InputStmt::~InputStmt()
+QString Statement::getTreeNode()
 {
-    for (Exp* ch : child) {
-        delete ch;
-    }
+    return " ";
 }
 
-GotoStmt::~GotoStmt()
+QString RemStmt::getTreeNode()
 {
-    for (Exp* ch : child) {
-        delete ch;
-    }
+    QString num = QString::number(lineNum);
+    QString treeNode = num + " REM " + getRunTime();
+    return treeNode;
 }
 
-IfStmt::~IfStmt()
+QString LetStmt::getTreeNode()
 {
-    for (Exp* ch : child) {
-        delete ch;
-    }
+    QString num = QString::number(lineNum);
+    QString treeNode = num + " LET = " + getRunTime();
+    return treeNode;
 }
 
-EndStmt::~EndStmt()
+QString PrintStmt::getTreeNode()
 {
-
+    QString num = QString::number(lineNum);
+    QString treeNode = num + " PRINT " + getRunTime();
+    return treeNode;
 }
 
-ErrorStmt::~ErrorStmt()
+QString InputStmt::getTreeNode()
 {
+    QString num = QString::number(lineNum);
+    QString treeNode = num + " INPUT " + getRunTime();
+    return treeNode;
+}
 
+QString GotoStmt::getTreeNode()
+{
+    QString num = QString::number(lineNum);
+    QString treeNode = num + " GOTO " + getRunTime();
+    return treeNode;
+}
+
+QString IfStmt::getTreeNode()
+{
+    QString num = QString::number(lineNum);
+    QString treeNode = num + " IF THEN " + getRunTime();
+    return treeNode;
+}
+
+QString EndStmt::getTreeNode()
+{
+    QString num = QString::number(lineNum);
+    QString treeNode = num + " END " + getRunTime();
+    return treeNode;
+}
+
+QString ErrorStmt::getTreeNode()
+{
+    QString num = QString::number(lineNum);
+    QString treeNode = num + " ERROR";
+    return treeNode;
 }

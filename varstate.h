@@ -1,3 +1,4 @@
+#pragma once
 #ifndef VARSTATE_H
 #define VARSTATE_H
 

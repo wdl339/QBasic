@@ -8,12 +8,20 @@
 
 using namespace std;
 
+class Statement;
+class LetStmt;
+class IfStmt;
+
 class Exp
 {
-public:
+    friend Statement;
+    friend LetStmt;
+    friend IfStmt;
+protected:
     int val;
     QString name;
     vector<Exp*> child;
+public:
     Exp(QString n = "", int v = 0);
     virtual int eval(map<QString, VarState>& varTable);
     virtual ~Exp();

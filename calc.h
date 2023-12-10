@@ -15,7 +15,6 @@ class Calc
 
     token getOp(Exp*& value);
     void connectSyntaxNode(token s, vector<Exp*>& node);
-    bool stringIsPosNum(QString s);
     bool isLetter(char c);
     bool isNum(char c);
 public:

@@ -2,7 +2,7 @@
 #include "ui_mainwindow.h"
 
 //
-// 主界面的构造函数，初始运行模式为RUN
+// 主界面的构造函数
 //
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -33,8 +33,9 @@ void MainWindow::clearAll()
     ui->CodeDisplay->clear();
     ui->textBrowser->clear();
     ui->treeDisplay->clear();
-    // 程序的一些状态也清除
-    program->clearAll();
+    // 程序状态也重置
+    delete program;
+    program = new Program();
 }
 
 //
@@ -78,7 +79,7 @@ void MainWindow::readStrLine(QString input)
     if(num >= 1000000) {
         throw QString("行号错误");
     }
-    // 有行号，储存输入的语句，以便展示
+    // 有行号，program储存输入的语句
     program->add(num, input);
 }
 
@@ -103,6 +104,7 @@ void MainWindow::dealWithCmd(QString input)
     } else {
         // 到此，可能是不带行号的语句*3
         if(isLet(input)) {
+            // 这样操作是防止等号前后不加空格的情况，后面也有类似语句
             input = input.replace("=", " = ").simplified();
             LetStmt* s = new LetStmt(0, secondPart(input), afterThirdPart(input));
             s->run(program->varTable);
@@ -153,17 +155,21 @@ void MainWindow::changeCodeDisplay()
     }
 }
 
+//
+// runCode正式运行代码
+//
 void MainWindow::runCode()
 {
     ui->textBrowser->clear();
     ui->treeDisplay->clear();
-    //varTable.clear();
+    program->clearUseCount();
     try {
         map<int, Statement*> code;
+        // 做map<int, QString>到map<int, Statement*>的转化
         for (const auto& pair : program->stmt) {
             QString input = pair.second;
             input = input.replace("=", " = ").replace(">", " > ").replace("<", " < ");
-            buildSyntaxTree(pair.first, (afterFirstPart(input)).simplified(), code);
+            strToStmt(pair.first, (afterFirstPart(input)).simplified(), code);
         }
         if(!code.empty()) {
             int curLineNum = 0;
@@ -172,6 +178,7 @@ void MainWindow::runCode()
             do {
                 curLineNum = nextLineNum;
                 Statement* s = code[curLineNum];
+                // 如果当前不是最后一句，那么找下一句
                 if(curLineNum != lastLineNum) {
                     auto it = code.upper_bound(curLineNum);
                     nextLineNum = it->first;
@@ -182,13 +189,18 @@ void MainWindow::runCode()
                     showSyntaxTree(pair.second);
                 }
             } while((curLineNum != lastLineNum || nextLineNum != lastLineNum) && nextLineNum != -1);
+            // 终止条件：nextLineNum为-1意味着遇到END，curLineNum和nextLineNum都不在最后
+            // （有可能curLineNum在最后，但最后一句是GOTO到前面的语句，这样也不能退出）
         }
     } catch (QString error) {
         QMessageBox::critical(this, "Error", error);
     }
 }
 
-void MainWindow::buildSyntaxTree(int num, QString input, map<int, Statement*>& code)
+//
+// strToStmt以num，字符串input和代码表的引用为参数，将input转化为Statement放入code中
+//
+void MainWindow::strToStmt(int num, QString input, map<int, Statement*>& code)
 {
     QString first = firstPart(input);
     QString second = secondPart(input);
@@ -217,17 +229,23 @@ void MainWindow::buildSyntaxTree(int num, QString input, map<int, Statement*>& c
         QMessageBox::critical(this, "Error", info);
         s = new ErrorStmt(num);
     }
-
     code[num] = s;
     showSyntaxTree(s);
 }
 
+//
+// showSyntaxTree以语句s为参数，将s的表达式树输出到treeDisplay
+//
 void MainWindow::showSyntaxTree(Statement* s)
 {
     QString res = s->syntaxTreeStr(program);
     ui->treeDisplay->append(res);
 }
 
+//
+// runCodeLine以语句s，nextLineNum的引用和代码表为参数，运行这一行语句
+// 并应对可能对nextLineNum的修改
+//
 void MainWindow::runCodeLine(Statement* s, int& nextLineNum, map<int, Statement*>& code)
 {
     try {
@@ -246,6 +264,7 @@ void MainWindow::runCodeLine(Statement* s, int& nextLineNum, map<int, Statement*
             }
         } else if (type == IF) {
             int num = s->getchildVal(1);
+            // num为0表示不需要跳转
             if(num != 0) {
                 if (code.find(num) == code.end()) {
                     throw QString("跳转到不存在的行号");
@@ -259,9 +278,11 @@ void MainWindow::runCodeLine(Statement* s, int& nextLineNum, map<int, Statement*
     } catch (QString error) {
         ui->textBrowser->append("error 行号" + QString::number(s->getLineNum()) + " " + error);
     }
-
 }
 
+//
+// startWait以INPUT语句s为参数，设置s要等待输入的变量，开始等待
+//
 void MainWindow::startWait(Statement* s)
 {
     ui->cmdLineEdit->clear();
@@ -270,14 +291,19 @@ void MainWindow::startWait(Statement* s)
     waitForInput.exec();
 }
 
+//
+// runInput以字符串input为变量，处理等待时用户的输入
+//
 void MainWindow::runInput(QString input)
 {
+    // 用户可能会把"?"提示符删掉，但是无所谓
     if(input[0] == "?") {
         input = afterFirstPart(input.simplified());
     }
     input = input.replace("-", "- ").simplified();
     int pos = 1;
     if(input[0] == "-") {
+        // 输入负数
         pos = -1;
         input = afterFirstPart(input);
     }
@@ -286,10 +312,15 @@ void MainWindow::runInput(QString input)
         ui->cmdLineEdit->clear();
         waitForInput.quit();
     } else {
+        // 错误输入
         ui->cmdLineEdit->setText("? ");
+        QMessageBox::critical(this, "Error", "请输入数字");
     }
 }
 
+//
+// loadFile加载文件
+//
 void MainWindow::loadFile()
 {
     QString path = QFileDialog::getOpenFileName(this, tr("Open a file."), "../");
@@ -307,12 +338,3 @@ void MainWindow::loadFile()
         }
     }
 }
-
-//void MainWindow::on_cmdLineEdit_editingFinished()
-//{
-//    QString cmd = ui->cmdLineEdit->text();
-//    ui->cmdLineEdit->setText("");
-
-//    ui->CodeDisplay->append(cmd);
-//}
-

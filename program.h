@@ -8,6 +8,9 @@ using namespace std;
 
 class MainWindow;
 
+//
+// 程序类
+//
 class Program
 {
     friend MainWindow;
@@ -16,20 +19,20 @@ class Program
     runMode mode; // 程序的运行模式
 
     map<int, QString> stmt; // 输入的每一行的语句
-    map<QString, VarState> varTable; // 储存变量
+    map<QString, VarState> varTable; // 储存变量的变量表
     QString varName; // WAIT模式下等待输入的变量的变量名
 public:
-    Program();
-    ~Program() {}
+    Program(); // 构造
+    ~Program(); // 析构
 
-    void clearAll();
-    bool isRun();
-    void erase(int num);
-    void add(int num, QString input);
-    bool hasVar(QString input);
-    int useTimeof(QString var);
-    void startWaitVar(QString var);
-    void setWaitVar(int val);
+    void clearUseCount(); // 清空所有变量的use count
+    bool isRun(); // 程序模式是否为RUN
+    void erase(int num); // 抹除特定行语句
+    void add(int num, QString input); // 加入语句
+    bool hasVar(QString input); // 是否有名字为input的变量
+    int useTimeof(QString var); // 返回变量的use count
+    void startWaitVar(QString var); // 开始等待INPUT
+    void setWaitVar(int val); // 设置等待的变量
 
 };
 

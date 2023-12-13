@@ -13,33 +13,40 @@
 
 using namespace std;
 
+// 语句类型枚举
 enum stmtType {REM, LET, PRINT, INPUT, GOTO, IF, END, ERROR};
 
+//
+// 语句类
+//
 class Statement
 {
 protected:
 
-    int lineNum;
-    int runTime = 0;
-    vector<Exp*> child;
-    virtual QString getRunTime();
+    int lineNum; // 语句的行号
+    int runTime; // 语句运行次数
+    vector<Exp*> child; // 语句内包含的一些表达式（树）
+    virtual QString getRunTime(); // 获取运行次数
 
 public:
-    stmtType type;
+    stmtType type; // 语句类型
 
-    Statement(int num);
-    ~Statement();
+    Statement(int num); // 构造
+    ~Statement(); // 析构
 
-    QString getWaitVarName();
-    int getchildVal(int num);
-    int getLineNum();
+    QString getWaitVarName(); // 用于INPUT语句获取INPUT后的变量名
+    int getchildVal(int num); // 获取child[num]的值
+    int getLineNum(); // 获取行号
 
-    virtual void run(map<QString, VarState>& varTable);
+    virtual void run(map<QString, VarState>& varTable); // 语句的运行
 
     QString syntaxTreeStr(Program*& program);  // 获取表达式树的字符串
     virtual QString getTreeNode(); // 获取表达式树的根节点的展示
 };
 
+//
+// REM语句
+//
 class RemStmt: public Statement
 {
 public:
@@ -48,6 +55,9 @@ public:
     ~RemStmt();
 };
 
+//
+// LET语句
+//
 class LetStmt: public Statement
 {
 public:
@@ -57,6 +67,9 @@ public:
     ~LetStmt();
 };
 
+//
+// PRINT语句
+//
 class PrintStmt: public Statement
 {
 public:
@@ -66,6 +79,9 @@ public:
     ~PrintStmt();
 };
 
+//
+// INPUT语句
+//
 class InputStmt: public Statement
 {
 public:
@@ -74,6 +90,9 @@ public:
     ~InputStmt();
 };
 
+//
+// GOTO语句
+//
 class GotoStmt: public Statement
 {
 public:
@@ -82,9 +101,12 @@ public:
     ~GotoStmt();
 };
 
+//
+// IF语句
+//
 class IfStmt: public Statement
 {
-    int runTimeFalse = 0;
+    int runTimeFalse = 0; // IF语句特有的false和true情况分开计数
 public:
     IfStmt(int num, QString ss);
     void run(map<QString, VarState>& varTable) override;
@@ -94,6 +116,9 @@ public:
 
 };
 
+//
+// END语句
+//
 class EndStmt: public Statement
 {
 public:
@@ -102,6 +127,9 @@ public:
     ~EndStmt();
 };
 
+//
+// ERROR语句（用于展示表达式树时，不合法语句显示ERROR
+//
 class ErrorStmt: public Statement
 {
 public:

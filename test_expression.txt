@@ -1,3 +1,5 @@
+90 LET a = 2
+95 PRINT - a **a+3
 100 PRINT -2 * (-2)
 110 PRINT (-2)*( - 2)
 120 PRINT 5 MOD 3

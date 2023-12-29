@@ -3,7 +3,7 @@
 //
 // stringIsPosNum以字符串为参数，返回它是否表示一个正数
 //
-bool stringIsPosNum(QString& s)
+bool stringIsPosNum(QString s)
 {
     QRegExp regExp("[0-9]+");
     if(regExp.exactMatch(s)) {

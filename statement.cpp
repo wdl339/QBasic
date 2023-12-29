@@ -1,6 +1,6 @@
 #include "statement.h"
 
-extern bool stringIsPosNum(QString& s);
+extern bool stringIsPosNum(QString s);
 
 //
 // 基类构造函数，以num为参数

@@ -1,0 +1,13 @@
+1 REM F F T T F T F F F F F T
+10 LET n1+n2=90
+20 LET n1     389=90
+30 LET n1_n2     =90
+40 LET          _234     =90
+50 LET n1,n2  =90
+60 LET   n1_       =90
+70 IF n1________9000 > 0 THEN 80
+80 IF n2_ 90= n1------- THEN 90
+90 INPUT n1+2233
+100 INPUT _____N1     1
+110 INPUT n1     n1
+120 INPUT n2____393874nnnn1

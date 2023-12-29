@@ -20,7 +20,7 @@ class Calc
     void connectSyntaxNode(token s, vector<Exp*>& node); // 构造CompoundExp压入栈中
     bool isLetter(char c); // 判断是否是一个字母
     bool isNum(char c); // 判断是否是一个数字
-    bool checkVarOrVal(Exp*& value); // 检查expression的下一段内容是不是数字或变量
+    token checkVarOrVal(Exp*& value); // 检查expression的下一段内容是不是数字或变量
     token dealWithSub(Exp*& value); // 对于‘-’是负号还是减号的判断及处理
 
 public:

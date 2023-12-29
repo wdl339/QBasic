@@ -2,7 +2,8 @@
 
 #include <QApplication>
 
-int main(int argc, char *argv[])
+// 平平无奇main函数
+int main(int argc, char* argv[])
 {
     QApplication a(argc, argv);
     MainWindow w;

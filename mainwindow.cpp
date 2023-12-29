@@ -156,7 +156,7 @@ void MainWindow::changeCodeDisplay()
 }
 
 //
-// runCode正式运行代码
+// runCode()正式运行代码
 //
 void MainWindow::runCode()
 {
@@ -189,7 +189,7 @@ void MainWindow::runCode()
                     showSyntaxTree(pair.second);
                 }
             } while((curLineNum != lastLineNum || nextLineNum != lastLineNum) && nextLineNum != -1);
-            // 终止条件：nextLineNum为-1意味着遇到END，curLineNum和nextLineNum都不在最后
+            // 终止条件：nextLineNum为-1意味着遇到END，curLineNum和nextLineNum都不在最后，或者是运行时错误
             // （有可能curLineNum在最后，但最后一句是GOTO到前面的语句，这样也不能退出）
         }
     } catch (QString error) {
@@ -276,7 +276,9 @@ void MainWindow::runCodeLine(Statement* s, int& nextLineNum, map<int, Statement*
             nextLineNum = -1;
         }
     } catch (QString error) {
-        ui->textBrowser->append("error 行号" + QString::number(s->getLineNum()) + " " + error);
+        QString info = "error 行号" + QString::number(s->getLineNum()) + " " + error;
+        QMessageBox::critical(this, "Error", info);
+        nextLineNum = -1;
     }
 }
 
@@ -319,7 +321,7 @@ void MainWindow::runInput(QString input)
 }
 
 //
-// loadFile加载文件
+// loadFile()加载文件
 //
 void MainWindow::loadFile()
 {

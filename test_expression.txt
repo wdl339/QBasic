@@ -1,8 +1,15 @@
 90 LET a = 2
-95 PRINT - a **a+3
-100 PRINT -2 * (-2)
-110 PRINT (-2)*( - 2)
+95 PRINT - a **a+5
+100 PRINT -2 * (-2) - 2
+110 PRINT (7- 4 / a )/5
+115 PRINT (3 + (114 - 14) / 10 ) * a / 13
+116 PRINT - (a + (-3))
+117 PRINT -(a + (-3 - 4 / 2 ** 2))
+118 PRINT (0 + (-3 - (-4 + 8 / a ** 3) / 3 ) ** (9 MOD (4 + a))) + (4 * (a + a)) * (-(-(-(-4)))) - 56
+119 PRINT 123456789
 120 PRINT 5 MOD 3
-130 PRINT 5 MOD -3
-140 PRINT -5MOD3
-150 PRINT -5 MOD -3
+135 PRINT 5 MOD (-3)
+170 PRINT -5 MOD3
+145 PRINT -5 MOD 3
+150 PRINT (-5) MOD 3
+165 PRINT (-5) MOD (-3)

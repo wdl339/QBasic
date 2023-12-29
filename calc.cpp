@@ -1,6 +1,6 @@
 #include "calc.h"
 
-extern bool stringIsPosNum(QString& s);
+extern bool stringIsPosNum(QString s);
 
 //
 // Calc类的构造函数，以QString类字符串为参数
@@ -141,8 +141,9 @@ Calc::token Calc::getOp(Exp*& value)
 
     if(*expression == '\0') return EOL;
 
-    if(checkVarOrVal(value))
-        return VALUE;
+    token t = checkVarOrVal(value);
+    if(t == VALUE || t == MOD)
+        return t;
 
     // 对于符号的处理
     switch (*expression) {
@@ -179,7 +180,7 @@ Calc::token Calc::getOp(Exp*& value)
 // checkVarOrVal以一个表达式类指针value的引用为参数，对expression读入下一小段内容，检查是不是数字或变量
 // 如果是，构造value并返回true
 //
-bool Calc::checkVarOrVal(Exp*& value)
+Calc::token Calc::checkVarOrVal(Exp*& value)
 {
     // 读到变量或MOD
     if(isLetter(*expression) || *expression == '_') {
@@ -192,7 +193,7 @@ bool Calc::checkVarOrVal(Exp*& value)
             return MOD;
         }
         value = new VarExp(s);
-        return true;
+        return VALUE;
     }
 
     // 读到数字
@@ -203,10 +204,10 @@ bool Calc::checkVarOrVal(Exp*& value)
             ++expression;
         }
         value = new ConstExp(val);
-        return true;
+        return VALUE;
     }
 
-    return false;
+    return EOL;
 }
 
 //
@@ -214,21 +215,21 @@ bool Calc::checkVarOrVal(Exp*& value)
 //
 Calc::token Calc::dealWithSub(Exp*& value)
 {
-    if(lastToken != VALUE && lastToken != CPAREN) {
+    if(lastToken == OPAREN) {
         // 是负号
         QString exp;
         ++expression;
-        bool flag = true;
+        vector<token> op;
         // 读入后面所有在这个负号影响范围内的表达式
-        while(*expression && !((*expression == '+' || *expression == '-' || *expression == ')') && flag)) {
+        while(*expression && !((*expression == '+' || *expression == '-' || *expression == ')') && op.empty())) {
             if(*expression == '(')
-                flag = false;
+                op.push_back(OPAREN);
             if(*expression == ')')
-                flag = true;
-            if(*expression != ' ')
-                exp += (*expression);
+                op.pop_back();
+            exp += (*expression);
             ++expression;
         }
+        exp = exp.simplified();
         if(stringIsPosNum(exp)) {  // 负数情况
             value = new ConstExp(-exp.toInt());
         } else {  // 负表达式情况，递归使用Calc处理负号后的表达式

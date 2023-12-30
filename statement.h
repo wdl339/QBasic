@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <vector>
 #include <queue>
+#include <stack>
 #include <exp.h>
 #include <calc.h>
 #include <program.h>

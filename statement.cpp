@@ -243,27 +243,37 @@ QString IfStmt::getRunTime()
 QString Statement::syntaxTreeStr(Program*& program)
 {
     QString res = getTreeNode();
-    // 利用队列，输出表达式（树）的内容
-    queue<Exp*> que;
+
+    // 前序遍历，利用栈，输出表达式（树）的内容
+    stack<Exp*> st, sTmp;
+    stack<int> numT;
     Exp* tmp;
-    // 用来保证缩进正确的变量
-    int numOfT = 1;
+    int numOfT;
     if(!child.empty()) {
         for (Exp* ch : child) {
-            que.push(ch);
+            sTmp.push(ch);
+            numT.push(1);
+        }
+        while(!sTmp.empty()) {
+            tmp = sTmp.top();
+            sTmp.pop();
+            st.push(tmp);
         }
     }
+
     bool flagForLet = false;
     if(type == LET) {
         flagForLet = true;
     }
 
-    while(!que.empty()) {
-        int size = que.size();
+    while(!st.empty()) {
+        int size = st.size();
         for(int j = 0; j < size; j++) {
             res += '\n';
-            tmp = que.front();
-            que.pop();
+            tmp = st.top();
+            st.pop();
+            numOfT = numT.top();
+            numT.pop();
             for(int i = 0; i < numOfT; i++) {
                 res += "    ";
             }
@@ -273,10 +283,16 @@ QString Statement::syntaxTreeStr(Program*& program)
                 res += (" " + QString::number(program->useTimeof(tmp->name)));
                 flagForLet = false;
             }
-            if(!(tmp->child).empty()) que.push(tmp->child[0]);
-            if((tmp->child).size() == 2 && tmp->child[1]) que.push(tmp->child[1]);
+            if((tmp->child).size() == 2 && tmp->child[1]) {
+                st.push(tmp->child[1]);
+                numT.push(numOfT + 1);
+            }
+            if(!(tmp->child).empty()) {
+                st.push(tmp->child[0]);
+                numT.push(numOfT + 1);
+            }
+
         }
-        numOfT += 1;
     }
 
     return res;
@@ -369,3 +385,39 @@ QString ErrorStmt::getTreeNode()
     QString treeNode = num + " ERROR";
     return treeNode;
 }
+
+//    // 利用队列，输出表达式（树）的内容
+//    queue<Exp*> que;
+//    Exp* tmp;
+//    // 用来保证缩进正确的变量
+//    int numOfT = 1;
+//    if(!child.empty()) {
+//        for (Exp* ch : child) {
+//            que.push(ch);
+//        }
+//    }
+//    bool flagForLet = false;
+//    if(type == LET) {
+//        flagForLet = true;
+//    }
+
+//    while(!que.empty()) {
+//        int size = que.size();
+//        for(int j = 0; j < size; j++) {
+//            res += '\n';
+//            tmp = que.front();
+//            que.pop();
+//            for(int i = 0; i < numOfT; i++) {
+//                res += "    ";
+//            }
+//            res += tmp->name;
+//            // 对LET语句，第一个变量要输出它的use count
+//            if (flagForLet) {
+//                res += (" " + QString::number(program->useTimeof(tmp->name)));
+//                flagForLet = false;
+//            }
+//            if(!(tmp->child).empty()) que.push(tmp->child[0]);
+//            if((tmp->child).size() == 2 && tmp->child[1]) que.push(tmp->child[1]);
+//        }
+//        numOfT += 1;
+//    }

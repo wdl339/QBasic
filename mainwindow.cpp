@@ -163,8 +163,8 @@ void MainWindow::runCode()
     ui->textBrowser->clear();
     ui->treeDisplay->clear();
     program->clearUseCount();
+    map<int, Statement*> code;
     try {
-        map<int, Statement*> code;
         // 做map<int, QString>到map<int, Statement*>的转化
         for (const auto& pair : program->stmt) {
             QString input = pair.second;
@@ -185,14 +185,17 @@ void MainWindow::runCode()
                 }
                 runCodeLine(s, nextLineNum, code);
                 ui->treeDisplay->clear();
-                for (const auto& pair : code) {
-                    showSyntaxTree(pair.second);
-                }
             } while((curLineNum != lastLineNum || nextLineNum != lastLineNum) && nextLineNum != -1);
             // 终止条件：nextLineNum为-1意味着遇到END，curLineNum和nextLineNum都不在最后，或者是运行时错误
             // （有可能curLineNum在最后，但最后一句是GOTO到前面的语句，这样也不能退出）
+            for (const auto& pair : code) {
+                showSyntaxTree(pair.second);
+            }
         }
     } catch (QString error) {
+        for (const auto& pair : code) {
+            showSyntaxTree(pair.second);
+        }
         QMessageBox::critical(this, "Error", error);
     }
 }
@@ -252,6 +255,9 @@ void MainWindow::runCodeLine(Statement* s, int& nextLineNum, map<int, Statement*
         s->run(program->varTable);
         stmtType type = s->type;
         if(type == INPUT) {
+            for (const auto& pair : code) {
+                showSyntaxTree(pair.second);
+            }
             startWait(s);
         } else if (type == PRINT) {
             ui->textBrowser->append(QString::number(s->getchildVal(0)));
@@ -276,6 +282,9 @@ void MainWindow::runCodeLine(Statement* s, int& nextLineNum, map<int, Statement*
             nextLineNum = -1;
         }
     } catch (QString error) {
+        for (const auto& pair : code) {
+            showSyntaxTree(pair.second);
+        }
         QString info = "error 行号" + QString::number(s->getLineNum()) + " " + error;
         QMessageBox::critical(this, "Error", info);
         nextLineNum = -1;

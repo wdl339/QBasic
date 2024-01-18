@@ -8,7 +8,7 @@
 #include <QMessageBox>
 
 //
-// 负责构建表达式树的“计算机”类
+// 负责构建表达式树的类
 //
 class Calc
 {

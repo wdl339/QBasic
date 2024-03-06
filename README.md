@@ -5,6 +5,7 @@ QBasic，SJTU SEP课程期末大作业，使用QT Creator开发的Basic解释器
 走过路过点个STAR再走呗！
 
 Table 1. Statements implemented in the minimal version of BASIC：
+
 REM	This statement is used for comments. Any text on the line after the keyword REM is ignored. 
 
 LET	This statement is BASIC’s assignment statement. The LET keyword is followed by a variable name, an equal sign, and an expression. As in C++, the effect of this statement is to assign the value of the expression to the variable, replacing any previous value. In BASIC, assignment is not an operator and may not be nested inside other expressions. 
@@ -31,6 +32,7 @@ END	Marks the end of the program. Execution halts when this line is reached. Thi
 
  
  Table 2. Commands to control the BASIC interpreter
+ 
 RUN	This command starts program execution beginning at the lowest-numbered line. Unless the flow is changed by GOTO and IF commands, statements are executed in line-number order. Execution ends when the program hits the END statement or continues past the last statement in the program. 
 
 LOAD	This command loads a file containing statements and commands. Statements and commands should be stored (also displayed in GUI) and executed respectively, as if they were entered into input box in order. A prompt window should be displayed when this command is entered. The window asks users to choose the file to load.

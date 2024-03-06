@@ -4,7 +4,7 @@ QBasic，SJTU SEP课程期末大作业，使用QT Creator开发的Basic解释器
 
 走过路过点个STAR再走呗！
 
-Table 1. Statements implemented in the minimal version of BASIC：
+**Table 1. Statements implemented in the minimal version of BASIC：**
 
 REM	This statement is used for comments. Any text on the line after the keyword REM is ignored. 
 
@@ -31,7 +31,7 @@ Note that the conditional operators (=, <, >) are not parts of expressions.
 END	Marks the end of the program. Execution halts when this line is reached. This statement is usually optional in BASIC programs because execution also stops if the program continues past the last numbered line. 
 
  
- Table 2. Commands to control the BASIC interpreter
+** Table 2. Commands to control the BASIC interpreter**
  
 RUN	This command starts program execution beginning at the lowest-numbered line. Unless the flow is changed by GOTO and IF commands, statements are executed in line-number order. Execution ends when the program hits the END statement or continues past the last statement in the program. 
 
